@@ -1,0 +1,6 @@
+{
+  "name": "AcadLytic",
+  "description": "Academics meet analytics: unified academic management, GPA prediction engine, assignment tracking, lecture calendar, and structured doubt support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
