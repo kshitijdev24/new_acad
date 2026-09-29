@@ -68,12 +68,12 @@ export const AuthModal = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-300 rounded-lg max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-6">
+      <div className="bg-white border border-slate-300 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto p-5 sm:p-8 shadow-2xl space-y-5 sm:space-y-6">
         {/* Header */}
         <div className="text-center relative">
           <button
             onClick={onClose}
-            className="absolute top-0 right-0 text-slate-400 hover:text-slate-600 p-1"
+            className="absolute top-0 right-0 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

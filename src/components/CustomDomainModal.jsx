@@ -32,32 +32,32 @@ export const CustomDomainModal = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-300 rounded-lg max-w-xl w-full p-6 shadow-2xl space-y-5">
+      <div className="bg-white border border-slate-300 rounded-lg max-w-xl w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl space-y-5">
         <div className="flex items-center justify-between pb-3 border-b border-slate-200">
           <div className="flex items-center gap-2">
             <Globe className="w-5 h-5 text-blue-700" />
             <h2 className="text-base font-bold text-slate-900">Custom Domain Configuration</h2>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <p className="text-xs text-slate-600 leading-relaxed">
-          Connect your institutional subdomain or custom apex domain to AcadLytic. SSL certificates are provisioned automatically via Let's Encrypt once DNS records resolve.
+          Connect your institutional subdomain or custom apex domain to AcadLytic. SSL certificates are provisioned automatically via Let&apos;s Encrypt once DNS records resolve.
         </p>
 
         {/* Current Active Domain Banner */}
-        <div className="p-3 bg-slate-50 border border-slate-200 rounded flex items-center justify-between">
+        <div className="p-3 bg-slate-50 border border-slate-200 rounded flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">
               Currently Connected Domain
             </div>
-            <div className="text-sm font-mono font-bold text-slate-900 mt-0.5">
+            <div className="text-sm font-mono font-bold text-slate-900 mt-0.5 truncate">
               {domainRecord?.domain}
             </div>
           </div>
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-800 bg-emerald-100 rounded">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-800 bg-emerald-100 rounded self-start sm:self-auto shrink-0">
             <ShieldCheck className="w-3.5 h-3.5" />
             SSL TLS 1.3 Certified
           </span>
@@ -69,7 +69,7 @@ export const CustomDomainModal = ({
             <label className="block font-semibold text-slate-800 mb-1">
               Configure New Institutional Domain:
             </label>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 required
@@ -81,7 +81,7 @@ export const CustomDomainModal = ({
               <button
                 type="submit"
                 disabled={isVerifying}
-                className="px-4 py-2 font-semibold text-white bg-blue-700 hover:bg-blue-800 disabled:bg-blue-300 rounded flex items-center gap-1.5 transition-colors"
+                className="px-4 py-2 font-semibold text-white bg-blue-700 hover:bg-blue-800 disabled:bg-blue-300 rounded flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 {isVerifying ? (
                   <>
@@ -89,7 +89,7 @@ export const CustomDomainModal = ({
                     <span>Verifying...</span>
                   </>
                 ) : (
-                  <span>Save & Verify</span>
+                  <span>Save &amp; Verify</span>
                 )}
               </button>
             </div>
@@ -106,7 +106,7 @@ export const CustomDomainModal = ({
         {/* DNS Records Table */}
         <div className="space-y-2">
           <div className="text-xs font-bold text-slate-800">Required DNS Records</div>
-          <div className="border border-slate-200 rounded overflow-hidden text-xs">
+          <div className="border border-slate-200 rounded overflow-x-auto text-xs">
             <table className="w-full text-left">
               <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
                 <tr>

@@ -208,7 +208,7 @@ export const GeminiChatbot = () => {
       </div>
 
       {/* Scrollable Conversation Thread */}
-      <div className="bg-white border border-slate-200 rounded-lg flex flex-col h-[520px]">
+      <div className="bg-white border border-slate-200 rounded-lg flex flex-col h-[460px] sm:h-[540px]">
         {/* Messages Container */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           {messages.map((msg) => {

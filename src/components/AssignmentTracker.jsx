@@ -231,8 +231,8 @@ export const AssignmentTracker = ({
 
                 {/* Right metadata and buttons */}
                 <div className="flex flex-col sm:items-end justify-between gap-2 shrink-0">
-                  <div className="text-right space-y-1">
-                    <div className="flex items-center sm:justify-end gap-1.5">
+                  <div className="text-left sm:text-right space-y-1">
+                    <div className="flex flex-wrap items-center sm:justify-end gap-1.5">
                       {isAssignmentDueWithin24Hours(assignment.dueDate, assignment.status) && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-800 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
                           <AlertTriangle className="w-3 h-3 text-rose-600" />
@@ -256,7 +256,7 @@ export const AssignmentTracker = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {assignment.status !== 'Completed' && (
                       <button
                         onClick={() => {
@@ -331,19 +331,19 @@ export const AssignmentTracker = ({
         </div>
       </div>
 
-      {/* Add Assignment Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-300 rounded-lg max-w-lg w-full p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <h3 className="text-base font-bold text-slate-900">Add New Assignment</h3>
-              <button
-                onClick={() => setIsAddModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+        {/* Add Assignment Modal */}
+        {isAddModalOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
+            <div className="bg-white border border-slate-300 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                <h3 className="text-base font-bold text-slate-900">Add New Assignment</h3>
+                <button
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
             <form onSubmit={handleCreateAssignment} className="space-y-4 text-xs">
               <div>
@@ -458,12 +458,12 @@ export const AssignmentTracker = ({
       {/* Edit Assignment Modal */}
       {editingAssignment && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-300 rounded-lg max-w-lg w-full p-6 shadow-xl space-y-4">
+          <div className="bg-white border border-slate-300 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-base font-bold text-slate-900">Edit Assignment</h3>
               <button
                 onClick={() => setEditingAssignment(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -557,7 +557,7 @@ export const AssignmentTracker = ({
       {/* Details Modal */}
       {detailsAssignment && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-300 rounded-lg max-w-lg w-full p-6 shadow-xl space-y-4">
+          <div className="bg-white border border-slate-300 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div>
                 <h3 className="text-base font-bold text-slate-900">{detailsAssignment.title}</h3>
@@ -567,7 +567,7 @@ export const AssignmentTracker = ({
               </div>
               <button
                 onClick={() => setDetailsAssignment(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -637,14 +637,14 @@ export const AssignmentTracker = ({
       {/* Submission Modal */}
       {submittingAssignment && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-300 rounded-lg max-w-md w-full p-6 shadow-xl space-y-4">
+          <div className="bg-white border border-slate-300 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-base font-bold text-slate-900">
                 Submit Deliverable
               </h3>
               <button
                 onClick={() => setSubmittingAssignment(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>

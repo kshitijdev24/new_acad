@@ -73,40 +73,40 @@ export const GpaPredictionEngine = ({ courses = [] }) => {
   const gradeOptions = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'F'];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Title Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-200 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-200 gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
             GPA Prediction Engine
           </h1>
-          <p className="text-sm text-slate-600 mt-1">
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
             Simulate future assessment outcomes and test scenario-based target goals.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setShowTargetSolver(!showTargetSolver)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-md transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-colors cursor-pointer"
           >
             <Target className="w-3.5 h-3.5 text-blue-700" />
-            <span>{showTargetSolver ? 'Hide Target Solver' : 'Target GPA Solver'}</span>
+            <span>{showTargetSolver ? 'Hide Solver' : 'Target GPA Solver'}</span>
           </button>
           <button
             onClick={handleReset}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-semibold text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5 text-blue-700" />
-            Reset Predictions
+            <span>Reset</span>
           </button>
         </div>
       </div>
 
       {/* Target Solver Drawer */}
       {showTargetSolver && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-3.5 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
               <h3 className="text-sm font-bold text-blue-950 flex items-center gap-1.5">
                 <Calculator className="w-4 h-4 text-blue-800" />
@@ -116,9 +116,9 @@ export const GpaPredictionEngine = ({ courses = [] }) => {
                 Specify your desired semester GPA to evaluate mathematical credit requirements.
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <label htmlFor="target-gpa" className="text-xs font-semibold text-blue-950">
-                Target GPA (Max 4.0):
+            <div className="flex items-center gap-2 sm:gap-3">
+              <label htmlFor="target-gpa" className="text-xs font-semibold text-blue-950 whitespace-nowrap">
+                Target GPA:
               </label>
               <input
                 id="target-gpa"
@@ -128,7 +128,7 @@ export const GpaPredictionEngine = ({ courses = [] }) => {
                 max="4.0"
                 value={targetGpaInput}
                 onChange={(e) => setTargetGpaInput(e.target.value)}
-                className="w-24 px-2.5 py-1 text-sm font-mono font-bold bg-white border border-blue-300 rounded text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-700"
+                className="w-20 sm:w-24 px-2.5 py-1 text-sm font-mono font-bold bg-white border border-blue-300 rounded text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-700"
               />
             </div>
           </div>
@@ -136,13 +136,13 @@ export const GpaPredictionEngine = ({ courses = [] }) => {
           {targetRequiredGrades && (
             <div className="mt-3 pt-3 border-t border-blue-200 text-xs text-blue-950 flex flex-wrap items-center gap-4">
               <span>
-                Required Weighted Grade Points: <strong className="font-mono">{targetRequiredGrades.requiredTotalPoints}</strong> out of {totalCredits * 4} maximum.
+                Required Weighted Grade Points: <strong className="font-mono">{targetRequiredGrades.requiredTotalPoints}</strong> out of {totalCredits * 4} max.
               </span>
               <span>
                 Status: {targetRequiredGrades.isFeasible ? (
                   <span className="font-semibold text-emerald-800">Mathematically Feasible</span>
                 ) : (
-                  <span className="font-semibold text-red-800">Exceeds 4.0 Maximum Ceiling</span>
+                  <span className="font-semibold text-red-800">Exceeds 4.0 Ceiling</span>
                 )}
               </span>
             </div>
@@ -151,43 +151,43 @@ export const GpaPredictionEngine = ({ courses = [] }) => {
       )}
 
       {/* Predict Your Semester GPA Card */}
-      <div className="bg-white border border-slate-200 rounded-lg p-6">
-        <div className="flex items-center justify-between pb-6 border-b border-slate-100">
+      <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 sm:pb-6 border-b border-slate-100 gap-3">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Predict Your Semester GPA</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">Predict Your Semester GPA</h2>
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
               Change the predicted grade for any course below to instantly simulate the impact on your GPA.
             </p>
           </div>
 
           <button
             onClick={handleReset}
-            className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-md transition-colors"
+            className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors self-start sm:self-auto cursor-pointer"
           >
             Reset Predictions
           </button>
         </div>
 
         {/* GPA Comparison Display */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 my-8 text-center">
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-            <div className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 my-5 sm:my-8 text-center">
+          <div className="p-3.5 sm:p-4 bg-slate-50 border border-slate-200 rounded-lg">
+            <div className="text-[10px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">
               Current GPA
             </div>
-            <div className="text-4xl font-extrabold text-blue-700 font-mono tabular-nums mt-2">
+            <div className="text-3xl sm:text-4xl font-extrabold text-blue-700 font-mono tabular-nums mt-1 sm:mt-2">
               {currentGpa.toFixed(2)}
             </div>
-            <div className="text-xs text-slate-500 mt-1">Based on evaluated internal scores</div>
+            <div className="text-[10px] sm:text-xs text-slate-500 mt-1">Based on evaluated internal scores</div>
           </div>
 
-          <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-lg">
-            <div className="text-xs font-bold text-blue-900 uppercase tracking-wider">
+          <div className="p-3.5 sm:p-4 bg-blue-50/70 border border-blue-200 rounded-lg">
+            <div className="text-[10px] sm:text-xs font-bold text-blue-900 uppercase tracking-wider">
               Predicted GPA
             </div>
-            <div className="text-4xl font-extrabold text-blue-900 font-mono tabular-nums mt-2">
+            <div className="text-3xl sm:text-4xl font-extrabold text-blue-900 font-mono tabular-nums mt-1 sm:mt-2">
               {predictedGpa.toFixed(2)}
             </div>
-            <div className="text-xs font-medium text-slate-600 mt-1">
+            <div className="text-[10px] sm:text-xs font-medium text-slate-600 mt-1">
               {delta > 0 ? (
                 <span className="text-emerald-700 font-semibold font-mono">+{delta.toFixed(2)} Projection Boost</span>
               ) : delta < 0 ? (
@@ -200,8 +200,8 @@ export const GpaPredictionEngine = ({ courses = [] }) => {
         </div>
 
         {/* Course Grade Selection Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <table className="w-full text-left text-xs sm:text-sm">
             <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-semibold border-b border-slate-200">
               <tr>
                 <th className="py-3 px-4">Course Code</th>

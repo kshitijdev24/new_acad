@@ -12,9 +12,9 @@ export const NotificationDrawer = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/40 flex justify-end">
-      <div className="bg-white w-full max-w-sm h-full shadow-2xl flex flex-col border-l border-slate-200">
+      <div className="bg-white w-full sm:max-w-sm h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200">
         {/* Header */}
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-3.5 sm:p-4 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bell className="w-4 h-4 text-blue-800" />
             <h2 className="text-sm font-bold text-slate-900">Academic Notifications</h2>
@@ -22,11 +22,11 @@ export const NotificationDrawer = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onMarkAllAsRead}
-              className="text-xs text-blue-700 hover:text-blue-900 font-medium"
+              className="text-xs text-blue-700 hover:text-blue-900 font-medium cursor-pointer"
             >
               Mark all read
             </button>
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
               <X className="w-5 h-5" />
             </button>
           </div>

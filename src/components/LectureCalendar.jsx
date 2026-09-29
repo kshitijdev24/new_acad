@@ -178,11 +178,11 @@ export const LectureCalendar = ({
         </div>
 
         {/* Days Header Row */}
-        <div className="grid grid-cols-7 border-b border-slate-200 text-center py-3 bg-slate-50 text-xs font-semibold text-slate-600">
+        <div className="grid grid-cols-7 border-b border-slate-200 text-center py-2 sm:py-3 bg-slate-50 text-[10px] sm:text-xs font-semibold text-slate-600">
           {daysOfWeek.map((day) => (
-            <div key={day.short}>
+            <div key={day.short} className="px-0.5">
               <div className="text-slate-500">{day.short}</div>
-              <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">{day.dayNum}</div>
+              <div className="text-xs sm:text-sm font-bold text-slate-900 font-mono mt-0.5">{day.dayNum}</div>
             </div>
           ))}
         </div>
@@ -329,7 +329,7 @@ export const LectureCalendar = ({
       {/* Event Details Modal */}
       {selectedEventDetails && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-300 rounded-lg max-w-lg w-full p-6 shadow-xl space-y-4">
+          <div className="bg-white border border-slate-300 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div>
                 <h3 className="text-base font-bold text-slate-900">
@@ -341,7 +341,7 @@ export const LectureCalendar = ({
               </div>
               <button
                 onClick={() => setSelectedEventDetails(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -420,21 +420,21 @@ export const LectureCalendar = ({
       {/* Schedule Lecture Modal */}
       {isScheduleModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-300 rounded-lg max-w-lg w-full p-6 shadow-xl space-y-4">
+          <div className="bg-white border border-slate-300 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="text-base font-bold text-slate-900">
                 Schedule Lecture or Exam Slot
               </h3>
               <button
                 onClick={() => setIsScheduleModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleCreateSchedule} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
                     Course Code
@@ -475,7 +475,7 @@ export const LectureCalendar = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
                     Date
@@ -516,7 +516,7 @@ export const LectureCalendar = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
                     Location / Room

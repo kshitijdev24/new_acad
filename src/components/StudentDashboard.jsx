@@ -63,22 +63,24 @@ export const StudentDashboard = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Student Welcome Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-200 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-200 gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
             Student Dashboard
           </h1>
-          <p className="text-sm text-slate-600 mt-1">
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
             Student: <span className="font-semibold text-slate-800">{currentUser?.name}</span>
             {currentUser?.enrollmentNumber && (
-              <span className="font-mono text-xs text-slate-500 ml-2">
+              <span className="font-mono text-[11px] sm:text-xs text-slate-500 block sm:inline sm:ml-2">
                 (Enrollment: {currentUser.enrollmentNumber})
               </span>
             )}
-            <span className="mx-2 text-slate-300">|</span>
-            {currentUser?.department || 'Computer Science and Engineering'}
+            <span className="hidden sm:inline mx-2 text-slate-300">|</span>
+            <span className="block sm:inline text-slate-500 mt-0.5 sm:mt-0">
+              {currentUser?.department || 'Computer Science and Engineering'}
+            </span>
           </p>
         </div>
 
@@ -86,84 +88,85 @@ export const StudentDashboard = ({
           <button
             onClick={handleExportPdf}
             disabled={isExportingPdf}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-md transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-colors cursor-pointer"
             title="Download verified institutional academic summary PDF"
           >
             {exportSuccess ? (
               <>
-                <Check className="w-4 h-4 text-emerald-600" />
+                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
                 <span className="text-emerald-700">PDF Downloaded</span>
               </>
             ) : (
               <>
-                <Download className="w-4 h-4 text-slate-600" />
-                <span>Export PDF Summary</span>
+                <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600" />
+                <span className="hidden xs:inline">Export PDF</span>
+                <span className="xs:hidden">PDF</span>
               </>
             )}
           </button>
           <button
             onClick={() => onNavigateTab('gpa')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-semibold text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors cursor-pointer"
           >
-            <TrendingUp className="w-4 h-4 text-blue-700" />
-            GPA Predictor
+            <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-700" />
+            <span>GPA Predictor</span>
           </button>
           <button
             onClick={() => onNavigateTab('assignments')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-md transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors shadow-xs cursor-pointer"
           >
-            <CheckSquare className="w-4 h-4" />
-            Track Assignments
+            <CheckSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>Assignments</span>
           </button>
         </div>
       </div>
 
       {/* Academic Overview Card Grid */}
-      <div className="bg-white border border-slate-200 rounded-lg p-5">
-        <h2 className="text-base font-semibold text-slate-900 mb-4 flex items-center justify-between">
+      <div className="bg-white border border-slate-200 rounded-lg p-3.5 sm:p-5">
+        <h2 className="text-sm sm:text-base font-semibold text-slate-900 mb-3 sm:mb-4 flex items-center justify-between">
           <span>Academic Overview</span>
-          <span className="text-xs font-normal text-slate-500">Current Semester Progress</span>
+          <span className="text-[11px] sm:text-xs font-normal text-slate-500">Current Semester Progress</span>
         </h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-md">
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          <div className="p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-lg">
+            <div className="text-[10px] sm:text-xs text-slate-500 font-semibold uppercase tracking-wider truncate">
               Current GPA
             </div>
-            <div className="text-3xl font-bold text-slate-900 font-mono tabular-nums mt-1">
+            <div className="text-xl sm:text-3xl font-bold text-slate-900 font-mono tabular-nums mt-1">
               {currentGpa}
             </div>
-            <div className="text-xs text-slate-500 mt-1">Scale of 4.00</div>
+            <div className="text-[10px] sm:text-xs text-slate-500 mt-1">Scale of 4.00</div>
           </div>
 
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-md">
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">
+          <div className="p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-lg">
+            <div className="text-[10px] sm:text-xs text-slate-500 font-semibold uppercase tracking-wider truncate">
               Completed Credits
             </div>
-            <div className="text-3xl font-bold text-slate-900 font-mono tabular-nums mt-1">
+            <div className="text-xl sm:text-3xl font-bold text-slate-900 font-mono tabular-nums mt-1">
               {totalCredits}
             </div>
-            <div className="text-xs text-slate-500 mt-1">Across 4 Enrolled Courses</div>
+            <div className="text-[10px] sm:text-xs text-slate-500 mt-1 truncate">4 Enrolled Courses</div>
           </div>
 
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-md">
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">
+          <div className="p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-lg">
+            <div className="text-[10px] sm:text-xs text-slate-500 font-semibold uppercase tracking-wider truncate">
               Overall Attendance
             </div>
-            <div className="text-3xl font-bold text-slate-900 font-mono tabular-nums mt-1">
+            <div className="text-xl sm:text-3xl font-bold text-slate-900 font-mono tabular-nums mt-1">
               {overallAttendance}%
             </div>
-            <div className="text-xs text-emerald-700 mt-1">Above 75% Requirement</div>
+            <div className="text-[10px] sm:text-xs text-emerald-700 font-medium mt-1 truncate">Above 75% Requirement</div>
           </div>
 
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-md">
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider">
+          <div className="p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-lg">
+            <div className="text-[10px] sm:text-xs text-slate-500 font-semibold uppercase tracking-wider truncate">
               Pending Tasks
             </div>
-            <div className="text-3xl font-bold text-slate-900 font-mono tabular-nums mt-1">
+            <div className="text-xl sm:text-3xl font-bold text-slate-900 font-mono tabular-nums mt-1">
               {upcomingAssignments.length}
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-[10px] sm:text-xs text-slate-500 mt-1 truncate">
               {completedAssignmentsCount} Submissions Graded
             </div>
           </div>
@@ -183,60 +186,60 @@ export const StudentDashboard = ({
       />
 
       {/* Current Courses Table */}
-      <div className="bg-white border border-slate-200 rounded-lg p-5">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white border border-slate-200 rounded-lg p-3.5 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Current Courses</h2>
-            <p className="text-xs text-slate-500">
+            <h2 className="text-sm sm:text-base font-semibold text-slate-900">Current Courses</h2>
+            <p className="text-[11px] sm:text-xs text-slate-500">
               Department curriculum offerings and internal grading marks
             </p>
           </div>
           <button
             onClick={() => onNavigateTab('calendar')}
-            className="text-xs font-semibold text-blue-700 hover:text-blue-900 flex items-center gap-1"
+            className="text-xs font-semibold text-blue-700 hover:text-blue-900 flex items-center gap-1 self-start sm:self-auto cursor-pointer"
           >
             <span>View Lecture Schedule</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-semibold border-b border-slate-200">
+        <div className="overflow-x-auto -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
+          <table className="w-full text-left text-xs sm:text-sm">
+            <thead className="bg-slate-50 text-slate-600 text-[11px] sm:text-xs uppercase font-semibold border-b border-slate-200">
               <tr>
-                <th className="py-3 px-4">Course Code</th>
-                <th className="py-3 px-4">Course Name</th>
-                <th className="py-3 px-4">Credits</th>
-                <th className="py-3 px-4">Current Grade</th>
-                <th className="py-3 px-4">Attendance</th>
-                <th className="py-3 px-4">Faculty In-Charge</th>
+                <th className="py-2.5 px-3 sm:py-3 sm:px-4 whitespace-nowrap">Course Code</th>
+                <th className="py-2.5 px-3 sm:py-3 sm:px-4 min-w-[160px]">Course Name</th>
+                <th className="py-2.5 px-3 sm:py-3 sm:px-4 whitespace-nowrap">Credits</th>
+                <th className="py-2.5 px-3 sm:py-3 sm:px-4 whitespace-nowrap">Current Grade</th>
+                <th className="py-2.5 px-3 sm:py-3 sm:px-4 min-w-[140px]">Attendance</th>
+                <th className="py-2.5 px-3 sm:py-3 sm:px-4 whitespace-nowrap">Faculty In-Charge</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
               {(courses || []).map((course) => (
                 <tr key={course.code} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-3 px-4 font-mono font-semibold text-blue-950">
+                  <td className="py-2.5 px-3 sm:py-3 sm:px-4 font-mono font-semibold text-blue-950 whitespace-nowrap">
                     {course.code}
                   </td>
-                  <td className="py-3 px-4 text-slate-900">
-                    <div>{course.name}</div>
-                    <div className="text-xs text-slate-400 font-normal">{course.schedule}</div>
+                  <td className="py-2.5 px-3 sm:py-3 sm:px-4 text-slate-900">
+                    <div className="font-semibold sm:font-medium">{course.name}</div>
+                    <div className="text-[11px] text-slate-400 font-normal">{course.schedule}</div>
                   </td>
-                  <td className="py-3 px-4 font-mono tabular-nums">{course.credits}</td>
-                  <td className="py-3 px-4">
+                  <td className="py-2.5 px-3 sm:py-3 sm:px-4 font-mono tabular-nums whitespace-nowrap">{course.credits}</td>
+                  <td className="py-2.5 px-3 sm:py-3 sm:px-4 whitespace-nowrap">
                     <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded text-xs">
                       {course.currentGrade}
                     </span>
-                    <span className="text-xs text-slate-500 ml-2 font-mono">
+                    <span className="text-[11px] sm:text-xs text-slate-500 ml-1.5 font-mono">
                       ({course.currentScore}%)
                     </span>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="py-2.5 px-3 sm:py-3 sm:px-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <span className="font-mono tabular-nums text-xs font-semibold">
                         {course.attendancePercent?.toFixed(1)}%
                       </span>
-                      <div className="w-20 bg-slate-200 h-1.5 rounded overflow-hidden">
+                      <div className="w-16 sm:w-20 bg-slate-200 h-1.5 rounded overflow-hidden">
                         <div
                           className={`h-full ${
                             course.attendancePercent >= 85
@@ -249,11 +252,11 @@ export const StudentDashboard = ({
                         />
                       </div>
                     </div>
-                    <div className="text-[11px] text-slate-400">
+                    <div className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">
                       {course.attendedClasses} of {course.totalClasses} classes attended
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-xs text-slate-600">{course.facultyName}</td>
+                  <td className="py-2.5 px-3 sm:py-3 sm:px-4 text-[11px] sm:text-xs text-slate-600 whitespace-nowrap">{course.facultyName}</td>
                 </tr>
               ))}
             </tbody>
@@ -262,9 +265,9 @@ export const StudentDashboard = ({
       </div>
 
       {/* Grid: Upcoming Assignments + Announcements */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Upcoming Assignments */}
-        <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 rounded-lg p-3.5 sm:p-5 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">

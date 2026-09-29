@@ -215,18 +215,18 @@ export const VoiceConversationModal = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-300 rounded-lg max-w-lg w-full p-6 shadow-2xl space-y-5">
+      <div className="bg-white border border-slate-300 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl space-y-4 sm:space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-200">
           <div className="flex items-center gap-2">
-            <Radio className="w-5 h-5 text-blue-700 animate-pulse" />
+            <Radio className="w-5 h-5 text-blue-700 animate-pulse shrink-0" />
             <h2 className="text-base font-bold text-slate-900">
               Live Voice Academic Session
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1"
+            className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
             title="Close voice session"
           >
             <X className="w-5 h-5" />
@@ -234,27 +234,33 @@ export const VoiceConversationModal = ({
         </div>
 
         {/* Engine and Protocol Badge */}
-        <div className="flex items-center justify-between text-xs p-3 bg-slate-50 border border-slate-200 rounded">
-          <span className="text-slate-600">Model:</span>
-          <span className="font-mono font-bold text-blue-900">gemini-3.8-live</span>
-          <span className="text-slate-400">|</span>
-          <span className="text-slate-600">Audio:</span>
-          <span className="font-mono text-slate-700">16kHz In / 24kHz Out</span>
-          <span className="text-slate-400">|</span>
-          <span className="text-slate-600">Status:</span>
-          <span
-            className={`font-semibold capitalize ${
-              connectionStatus === 'connected'
-                ? 'text-emerald-700'
-                : connectionStatus === 'connecting'
-                ? 'text-amber-700'
-                : connectionStatus === 'error'
-                ? 'text-red-700'
-                : 'text-slate-500'
-            }`}
-          >
-            {connectionStatus}
-          </span>
+        <div className="flex flex-wrap items-center justify-between text-xs p-2.5 sm:p-3 bg-slate-50 border border-slate-200 rounded-lg gap-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-600">Model:</span>
+            <span className="font-mono font-bold text-blue-900">gemini-3.8-live</span>
+          </div>
+          <span className="text-slate-300 hidden sm:inline">|</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-600">Audio:</span>
+            <span className="font-mono text-slate-700">16kHz / 24kHz</span>
+          </div>
+          <span className="text-slate-300 hidden sm:inline">|</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-600">Status:</span>
+            <span
+              className={`font-semibold capitalize ${
+                connectionStatus === 'connected'
+                  ? 'text-emerald-700'
+                  : connectionStatus === 'connecting'
+                  ? 'text-amber-700'
+                  : connectionStatus === 'error'
+                  ? 'text-red-700'
+                  : 'text-slate-500'
+              }`}
+            >
+              {connectionStatus}
+            </span>
+          </div>
         </div>
 
         {/* Visual Audio Activity Box */}
