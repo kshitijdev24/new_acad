@@ -7,8 +7,14 @@ import { GoogleGenAI, Modality } from '@google/genai';
 import { WebSocketServer } from 'ws';
 import { connectMongo, inMemoryDb, getDbStatus } from './server/db.js';
 import * as models from './server/models.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 dotenv.config();
+
+
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -271,97 +277,108 @@ app.get('/api/users', async (req, res) => {
 // ==========================================
 // GEMINI MULTI-TURN AI CHAT ENDPOINT
 // ==========================================
+// app.post('/api/chat', async (req, res) => {
+//   try {
+//     const {
+//       message,
+//       history = [],
+//       model = 'gemini-3.5-flash',
+//       role = 'academic_tutor',
+//       useGoogleSearch = false,
+//     } = req.body;
+
+//     if (!message || typeof message !== 'string') {
+//       return res.status(400).json({ error: 'Valid message string is required.' });
+//     }
+
+//     let systemInstruction =
+//       'You are an authoritative academic tutor and curriculum mentor for computer science, engineering mathematics, and physics at Bharati Vidyapeeth College of Engineering (BVCOE), New Delhi. Provide academically precise, structured, and pedagogical explanations. Do not use emoji icons, em dashes, or generic conversational filler. Present mathematical expressions and code cleanly.';
+
+//     if (role === 'pyq_analyst') {
+//       systemInstruction =
+//         'You are an academic examination and Previous Year Questions (PYQ) analyst for university semester exams. Evaluate question weightage, suggest step-by-step mark distribution, point out recurring examination theorems (e.g. Master Theorem, Fourier Series, Maxwell Equations, Dynamic Programming), and provide structured revision outlines. Avoid informal phrasing or emoji icons.';
+//     } else if (role === 'lab_advisor') {
+//       systemInstruction =
+//         'You are a laboratory advisor and code debugging instructor for engineering coursework. Analyze code logic, pinpoint recursion errors or pointer misalignments, review experimental error calculations, and provide clean code corrections. Do not use emoji icons or em dashes.';
+//     } else if (role === 'study_planner') {
+//       systemInstruction =
+//         'You are an expert academic strategist and cognitive workload optimizer for engineering students. You analyze pending assignment deadlines, course weightages, upcoming lecture syllabi, and study blocks to give practical, high-yield daily revision advice. Emphasize active recall, spaced repetition, Pomodoro pacing, and practical stress-reduction tactics. Avoid conversational filler or emoji icons.';
+//     }
+
+//     let selectedModel = 'gemini-3.5-flash';
+//     if (model === 'gemini-3.1-pro-preview') {
+//       selectedModel = 'gemini-3.1-pro-preview';
+//     } else if (model === 'gemini-3.1-flash-lite') {
+//       selectedModel = 'gemini-3.1-flash-lite';
+//     } else {
+//       selectedModel = 'gemini-3.5-flash';
+//     }
+
+//     const formattedContents = [];
+//     if (Array.isArray(history)) {
+//       for (const item of history) {
+//         if (item.role === 'user' || item.role === 'model') {
+//           formattedContents.push({
+//             role: item.role,
+//             parts: [{ text: String(item.text || '') }],
+//           });
+//         }
+//       }
+//     }
+
+//     formattedContents.push({
+//       role: 'user',
+//       parts: [{ text: message }],
+//     });
+
+//     const tools = useGoogleSearch ? [{ googleSearch: {} }] : undefined;
+
+//     const response = await ai.models.generateContent({
+//       model: selectedModel,
+//       contents: formattedContents,
+//       config: {
+//         systemInstruction,
+//         tools,
+//       },
+//     });
+
+//     const replyText = response.text || 'No response generated.';
+//     const groundingChunks =
+//       response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+
+//     const searchSources = groundingChunks
+//       .map((chunk) => {
+//         if (chunk.web) {
+//           return {
+//             title: chunk.web.title || 'Web Reference',
+//             uri: chunk.web.uri || '',
+//           };
+//         }
+//         return null;
+//       })
+//       .filter(Boolean);
+
+//     return res.json({
+//       text: replyText,
+//       model: selectedModel,
+//       sources: searchSources,
+//     });
+//   } catch (error) {
+//     console.error('Gemini Chat API Error:', error);
+//     return res.status(500).json({
+//       error: error?.message || 'Failed to process AI chat request.',
+//     });
+//   }
+// });
+
 app.post('/api/chat', async (req, res) => {
   try {
-    const {
-      message,
-      history = [],
-      model = 'gemini-3.5-flash',
-      role = 'academic_tutor',
-      useGoogleSearch = false,
-    } = req.body;
-
-    if (!message || typeof message !== 'string') {
-      return res.status(400).json({ error: 'Valid message string is required.' });
-    }
-
-    let systemInstruction =
-      'You are an authoritative academic tutor and curriculum mentor for computer science, engineering mathematics, and physics at Bharati Vidyapeeth College of Engineering (BVCOE), New Delhi. Provide academically precise, structured, and pedagogical explanations. Do not use emoji icons, em dashes, or generic conversational filler. Present mathematical expressions and code cleanly.';
-
-    if (role === 'pyq_analyst') {
-      systemInstruction =
-        'You are an academic examination and Previous Year Questions (PYQ) analyst for university semester exams. Evaluate question weightage, suggest step-by-step mark distribution, point out recurring examination theorems (e.g. Master Theorem, Fourier Series, Maxwell Equations, Dynamic Programming), and provide structured revision outlines. Avoid informal phrasing or emoji icons.';
-    } else if (role === 'lab_advisor') {
-      systemInstruction =
-        'You are a laboratory advisor and code debugging instructor for engineering coursework. Analyze code logic, pinpoint recursion errors or pointer misalignments, review experimental error calculations, and provide clean code corrections. Do not use emoji icons or em dashes.';
-    } else if (role === 'study_planner') {
-      systemInstruction =
-        'You are an expert academic strategist and cognitive workload optimizer for engineering students. You analyze pending assignment deadlines, course weightages, upcoming lecture syllabi, and study blocks to give practical, high-yield daily revision advice. Emphasize active recall, spaced repetition, Pomodoro pacing, and practical stress-reduction tactics. Avoid conversational filler or emoji icons.';
-    }
-
-    let selectedModel = 'gemini-3.5-flash';
-    if (model === 'gemini-3.1-pro-preview') {
-      selectedModel = 'gemini-3.1-pro-preview';
-    } else if (model === 'gemini-3.1-flash-lite') {
-      selectedModel = 'gemini-3.1-flash-lite';
-    } else {
-      selectedModel = 'gemini-3.5-flash';
-    }
-
-    const formattedContents = [];
-    if (Array.isArray(history)) {
-      for (const item of history) {
-        if (item.role === 'user' || item.role === 'model') {
-          formattedContents.push({
-            role: item.role,
-            parts: [{ text: String(item.text || '') }],
-          });
-        }
-      }
-    }
-
-    formattedContents.push({
-      role: 'user',
-      parts: [{ text: message }],
-    });
-
-    const tools = useGoogleSearch ? [{ googleSearch: {} }] : undefined;
-
-    const response = await ai.models.generateContent({
-      model: selectedModel,
-      contents: formattedContents,
-      config: {
-        systemInstruction,
-        tools,
-      },
-    });
-
-    const replyText = response.text || 'No response generated.';
-    const groundingChunks =
-      response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-
-    const searchSources = groundingChunks
-      .map((chunk) => {
-        if (chunk.web) {
-          return {
-            title: chunk.web.title || 'Web Reference',
-            uri: chunk.web.uri || '',
-          };
-        }
-        return null;
-      })
-      .filter(Boolean);
-
-    return res.json({
-      text: replyText,
-      model: selectedModel,
-      sources: searchSources,
-    });
-  } catch (error) {
-    console.error('Gemini Chat API Error:', error);
-    return res.status(500).json({
-      error: error?.message || 'Failed to process AI chat request.',
-    });
+    const { message } = req.body;
+    const result = await model.generateContent(message);
+    res.json({ reply: result.response.text() });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Gemini request failed' });
   }
 });
 
@@ -446,7 +463,7 @@ wss.on('connection', async (clientWs) => {
       if (session) {
         try {
           session.close();
-        } catch (_) {}
+        } catch (_) { }
       }
     });
   } catch (err) {
@@ -483,8 +500,10 @@ async function startServer() {
     });
   }
 
-  server.listen(PORT, '0.0.0.0', () => {
-    console.log(`[AcadLytic] Full-Stack Node + Express + MongoDB server running on http://0.0.0.0:${PORT}`);
+  server.listen(PORT, () => {
+    console.log(
+      `[AcadLytic] Server running at http://localhost:${PORT}`
+    );
   });
 }
 

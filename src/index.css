@@ -1,1 +1,52 @@
 @import "tailwindcss";
+
+html,
+body,
+#root {
+	width: 100%;
+	min-height: 100%;
+}
+
+body {
+	margin: 0;
+}
+
+img,
+video,
+canvas {
+	max-width: 100%;
+}
+
+.grid > *,
+.flex > * {
+	min-width: 0;
+}
+
+@media (min-width: 80rem) {
+	header nav {
+		flex: 1 1 0%;
+		min-width: 0;
+		overflow: visible;
+	}
+
+	header nav > button {
+		flex-shrink: 0;
+	}
+}
+
+@media (max-width: 639px) {
+	header > div {
+		padding-inline: 0.75rem;
+	}
+
+	header > div > div:first-child {
+		column-gap: 0.5rem;
+	}
+
+	input,
+	select,
+	textarea {
+		min-width: 0;
+		max-width: 100%;
+	}
+}

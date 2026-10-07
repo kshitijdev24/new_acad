@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+
 import {
   INITIAL_STUDENT_USER,
   INITIAL_COURSES,
@@ -7,33 +8,34 @@ import {
   INITIAL_LECTURE_EVENTS,
   INITIAL_DOUBT_QUESTIONS,
   INITIAL_PYQ_TOPICS,
-  INITIAL_DOMAIN_RECORD
-} from './data/mockData.js';
-import { api } from './services/api.js';
+  INITIAL_DOMAIN_RECORD,
+} from "./data/mockData.js";
+import { api } from "./services/api.js";
 
-import { Header } from './components/Header.jsx';
-import { InstitutionalBanner } from './components/InstitutionalBanner.jsx';
-import { StudentDashboard } from './components/StudentDashboard.jsx';
-import { GpaPredictionEngine } from './components/GpaPredictionEngine.jsx';
-import { AssignmentTracker } from './components/AssignmentTracker.jsx';
-import { LectureCalendar } from './components/LectureCalendar.jsx';
-import { DoubtSupportSystem } from './components/DoubtSupportSystem.jsx';
-import { PyqSyllabusAnalyzer } from './components/PyqSyllabusAnalyzer.jsx';
-import { FacultyDashboard } from './components/FacultyDashboard.jsx';
-import { AdminDashboard } from './components/AdminDashboard.jsx';
-import { CustomDomainModal } from './components/CustomDomainModal.jsx';
-import { PrivacyPolicyModal } from './components/PrivacyPolicyModal.jsx';
-import { TermsModal } from './components/TermsModal.jsx';
-import { AuthModal } from './components/AuthModal.jsx';
-import { NotificationDrawer } from './components/NotificationDrawer.jsx';
-import { Footer } from './components/Footer.jsx';
-import { GeminiChatbot } from './components/GeminiChatbot.jsx';
-import { VoiceConversationModal } from './components/VoiceConversationModal.jsx';
+import { Header } from "./components/Header.jsx";
+import { InstitutionalBanner } from "./components/InstitutionalBanner.jsx";
+import { StudentDashboard } from "./components/StudentDashboard.jsx";
+import { GpaPredictionEngine } from "./components/GpaPredictionEngine.jsx";
+import { AssignmentTracker } from "./components/AssignmentTracker.jsx";
+import { LectureCalendar } from "./components/LectureCalendar.jsx";
+import { DoubtSupportSystem } from "./components/DoubtSupportSystem.jsx";
+import { PyqSyllabusAnalyzer } from "./components/PyqSyllabusAnalyzer.jsx";
+import { FacultyDashboard } from "./components/FacultyDashboard.jsx";
+import { AdminDashboard } from "./components/AdminDashboard.jsx";
+import { CustomDomainModal } from "./components/CustomDomainModal.jsx";
+import { PrivacyPolicyModal } from "./components/PrivacyPolicyModal.jsx";
+import { TermsModal } from "./components/TermsModal.jsx";
+import { AuthModal } from "./components/AuthModal.jsx";
+import { NotificationDrawer } from "./components/NotificationDrawer.jsx";
+import { Footer } from "./components/Footer.jsx";
+import { GeminiChatbot } from "./components/GeminiChatbot.jsx";
+import { VoiceConversationModal } from "./components/VoiceConversationModal.jsx";
+// server code
 
 export default function App() {
   // Current logged in user (defaults to Kshitij Jaiswal, author of the report)
   const [currentUser, setCurrentUser] = useState(INITIAL_STUDENT_USER);
-  const [currentTab, setCurrentTab] = useState('dashboard');
+  const [currentTab, setCurrentTab] = useState("dashboard");
 
   // Dynamic application data state
   const [courses, setCourses] = useState(INITIAL_COURSES);
@@ -47,23 +49,27 @@ export default function App() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [fetchedCourses, fetchedAssignments, fetchedDoubts] = await Promise.all([
-          api.getCourses().catch(() => null),
-          api.getAssignments().catch(() => null),
-          api.getDoubtQuestions().catch(() => null),
-        ]);
+        const [fetchedCourses, fetchedAssignments, fetchedDoubts] =
+          await Promise.all([
+            api.getCourses().catch(() => null),
+            api.getAssignments().catch(() => null),
+            api.getDoubts().catch(() => null),
+          ]);
 
         if (Array.isArray(fetchedCourses) && fetchedCourses.length > 0) {
           setCourses(fetchedCourses);
         }
-        if (Array.isArray(fetchedAssignments) && fetchedAssignments.length > 0) {
+        if (
+          Array.isArray(fetchedAssignments) &&
+          fetchedAssignments.length > 0
+        ) {
           setAssignments(fetchedAssignments);
         }
         if (Array.isArray(fetchedDoubts) && fetchedDoubts.length > 0) {
           setDoubtQuestions(fetchedDoubts);
         }
       } catch (err) {
-        console.warn('Backend sync fallback to mock data:', err);
+        console.warn("Backend sync fallback to mock data:", err);
       }
     }
     loadData();
@@ -72,29 +78,30 @@ export default function App() {
   // Notifications
   const [notifications, setNotifications] = useState([
     {
-      id: 'notif-1',
-      title: 'Lab Report 2 Evaluated',
-      message: 'Ms. Deepika Yadav marked your Lab Report 2: 94/100.',
-      time: '10 mins ago',
+      id: "notif-1",
+      title: "Lab Report 2 Evaluated",
+      message: "Ms. Deepika Yadav marked your Lab Report 2: 94/100.",
+      time: "10 mins ago",
       read: false,
-      category: 'grade'
+      category: "grade",
     },
     {
-      id: 'notif-2',
-      title: 'Upcoming Assessment Reminder',
-      message: 'Calculus Problem Set 4 submission is due within 48 hours.',
-      time: '2 hours ago',
+      id: "notif-2",
+      title: "Upcoming Assessment Reminder",
+      message: "Calculus Problem Set 4 submission is due within 48 hours.",
+      time: "2 hours ago",
       read: false,
-      category: 'assignment'
+      category: "assignment",
     },
     {
-      id: 'notif-3',
-      title: 'Doubt Resolved',
-      message: 'Ms. Deepika Yadav provided guidance on your binary search tree query.',
-      time: '1 day ago',
+      id: "notif-3",
+      title: "Doubt Resolved",
+      message:
+        "Ms. Deepika Yadav provided guidance on your binary search tree query.",
+      time: "1 day ago",
       read: true,
-      category: 'doubt'
-    }
+      category: "doubt",
+    },
   ]);
 
   // Modal display states
@@ -123,18 +130,20 @@ export default function App() {
     setNotifications((prev) => [
       {
         id: `notif-${Date.now()}`,
-        title: 'New Assignment Added',
+        title: "New Assignment Added",
         message: `${newAsg.title} added to ${newAsg.courseCode} syllabus.`,
-        time: 'Just now',
+        time: "Just now",
         read: false,
-        category: 'assignment',
+        category: "assignment",
       },
       ...prev,
     ]);
   };
 
   const handleUpdateAssignment = async (updated) => {
-    setAssignments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+    setAssignments((prev) =>
+      prev.map((a) => (a.id === updated.id ? updated : a)),
+    );
     try {
       await api.updateAssignment(updated.id, updated);
     } catch (_) {}
@@ -147,14 +156,14 @@ export default function App() {
         if (a.id === assignmentId) {
           updatedTarget = {
             ...a,
-            status: 'Completed',
+            status: "Completed",
             submittedFileName: fileName,
-            submissionDate: new Date().toISOString().split('T')[0],
+            submissionDate: new Date().toISOString().split("T")[0],
           };
           return updatedTarget;
         }
         return a;
-      })
+      }),
     );
 
     if (updatedTarget) {
@@ -166,11 +175,11 @@ export default function App() {
     setNotifications((prev) => [
       {
         id: `notif-${Date.now()}`,
-        title: 'Deliverable Submitted',
+        title: "Deliverable Submitted",
         message: `Successfully uploaded ${fileName} for grading.`,
-        time: 'Just now',
+        time: "Just now",
         read: false,
-        category: 'assignment',
+        category: "assignment",
       },
       ...prev,
     ]);
@@ -188,13 +197,13 @@ export default function App() {
   };
 
   const handleAddReply = async (questionId, replyText) => {
-    const isFaculty = currentUser.role === 'faculty';
+    const isFaculty = currentUser.role === "faculty";
     const newReply = {
       id: `rep-${Date.now()}`,
       authorName: currentUser.name,
       authorRole: currentUser.role,
       text: replyText,
-      createdAt: new Date().toISOString().replace('T', ' ').slice(0, 16),
+      createdAt: new Date().toISOString().replace("T", " ").slice(0, 16),
       isFacultyResponse: isFaculty,
     };
 
@@ -203,12 +212,12 @@ export default function App() {
         if (q.id === questionId) {
           return {
             ...q,
-            status: isFaculty ? 'Answered' : q.status,
+            status: isFaculty ? "Answered" : q.status,
             replies: [...q.replies, newReply],
           };
         }
         return q;
-      })
+      }),
     );
 
     try {
@@ -231,7 +240,7 @@ export default function App() {
   // Faculty course updates
   const handleUpdateCourse = async (updatedCourse) => {
     setCourses((prev) =>
-      prev.map((c) => (c.code === updatedCourse.code ? updatedCourse : c))
+      prev.map((c) => (c.code === updatedCourse.code ? updatedCourse : c)),
     );
     try {
       await api.updateCourse(updatedCourse.code, updatedCourse);
@@ -246,23 +255,23 @@ export default function App() {
             ...a,
             obtainedMarks: marks,
             feedback,
-            status: 'Completed',
+            status: "Completed",
           };
           api.updateAssignment(assignmentId, updated).catch(() => {});
           return updated;
         }
         return a;
-      })
+      }),
     );
 
     setNotifications((prev) => [
       {
         id: `notif-${Date.now()}`,
-        title: 'Assignment Graded',
+        title: "Assignment Graded",
         message: `Evaluation completed: ${marks} marks recorded.`,
-        time: 'Just now',
+        time: "Just now",
         read: false,
-        category: 'grade',
+        category: "grade",
       },
       ...prev,
     ]);
@@ -273,7 +282,7 @@ export default function App() {
     setDomainRecord((prev) => ({
       ...prev,
       domain: newDomain,
-      status: 'active',
+      status: "active",
       sslActive: true,
       connectedAt: new Date().toISOString(),
     }));
@@ -291,12 +300,12 @@ export default function App() {
   // Role authentication change
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
-    if (user.role === 'faculty') {
-      setCurrentTab('faculty-tools');
-    } else if (user.role === 'admin') {
-      setCurrentTab('admin-panel');
+    if (user.role === "faculty") {
+      setCurrentTab("faculty-tools");
+    } else if (user.role === "admin") {
+      setCurrentTab("admin-panel");
     } else {
-      setCurrentTab('dashboard');
+      setCurrentTab("dashboard");
     }
   };
 
@@ -318,7 +327,6 @@ export default function App() {
         currentUser={currentUser}
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
-        onOpenDomainModal={() => setIsDomainModalOpen(true)}
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         unreadNotificationsCount={unreadNotificationsCount}
         onLogout={handleLogout}
@@ -329,7 +337,7 @@ export default function App() {
 
       {/* Main Viewport Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-        {currentTab === 'dashboard' && (
+        {currentTab === "dashboard" && (
           <StudentDashboard
             currentUser={currentUser}
             courses={courses}
@@ -340,11 +348,9 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'gpa' && (
-          <GpaPredictionEngine courses={courses} />
-        )}
+        {currentTab === "gpa" && <GpaPredictionEngine courses={courses} />}
 
-        {currentTab === 'assignments' && (
+        {currentTab === "assignments" && (
           <AssignmentTracker
             assignments={assignments}
             courses={courses}
@@ -354,7 +360,7 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'calendar' && (
+        {currentTab === "calendar" && (
           <LectureCalendar
             events={lectureEvents}
             userRole={currentUser.role}
@@ -362,7 +368,7 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'doubts' && (
+        {currentTab === "doubts" && (
           <DoubtSupportSystem
             currentUser={currentUser}
             courses={courses}
@@ -372,18 +378,16 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'pyq' && (
+        {currentTab === "pyq" && (
           <PyqSyllabusAnalyzer
             courses={courses}
             pyqTopics={INITIAL_PYQ_TOPICS}
           />
         )}
 
-        {currentTab === 'ai-chat' && (
-          <GeminiChatbot />
-        )}
+        {currentTab === "ai-chat" && <GeminiChatbot />}
 
-        {currentTab === 'faculty-tools' && (
+        {currentTab === "faculty-tools" && (
           <FacultyDashboard
             currentUser={currentUser}
             courses={courses}
@@ -395,7 +399,7 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'admin-panel' && (
+        {currentTab === "admin-panel" && (
           <AdminDashboard
             currentUser={currentUser}
             domainRecord={domainRecord}
