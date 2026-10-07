@@ -19,16 +19,15 @@
     "jsx": "react-jsx",
     "paths": {
       "@/*": [
-        "./src/*"
+        "./frontend/src/*"
       ]
     },
     "noEmit": true
   },
   "include": [
-    "src/**/*",
-    "server/**/*",
-    "server.js",
-    "vite.config.ts"
+    "frontend/src/**/*",
+    "backend/**/*",
+    "frontend/vite.config.ts"
   ],
   "exclude": [
     "node_modules",

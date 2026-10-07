@@ -1,12 +1,13 @@
 import express from 'express';
 import http from 'http';
+import net from 'net';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { WebSocketServer } from 'ws';
-import { connectMongo, inMemoryDb, getDbStatus } from './server/db.js';
-import * as models from './server/models.js';
+import { connectMongo, inMemoryDb, getDbStatus } from './db.js';
+import * as models from './models.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 dotenv.config();
@@ -24,6 +25,22 @@ const server = http.createServer(app);
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json({ limit: '10mb' }));
+
+function findAvailablePort(port) {
+  return new Promise((resolve, reject) => {
+    const probe = net.createServer();
+    probe.once('error', (error) => {
+      if (error.code === 'EADDRINUSE') {
+        resolve(findAvailablePort(port + 1));
+        return;
+      }
+      reject(error);
+    });
+    probe.listen(port, () => {
+      probe.close((error) => (error ? reject(error) : resolve(port)));
+    });
+  });
+}
 
 // Initialize MongoDB Connection (with graceful fallback)
 connectMongo();
@@ -485,25 +502,31 @@ wss.on('connection', async (clientWs) => {
 // ==========================================
 async function startServer() {
   const isProduction = process.env.NODE_ENV === 'production';
+  const port = await findAvailablePort(PORT);
 
   if (!isProduction) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      configFile: path.resolve(__dirname, '../frontend/vite.config.ts'),
+      server: {
+        middlewareMode: true,
+        ws: process.env.DISABLE_HMR === 'true' ? false : { server },
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.resolve(__dirname, 'dist')));
+    app.use(express.static(path.resolve(__dirname, '../frontend/dist')));
     app.get('*', (req, res) => {
-      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+      res.sendFile(path.resolve(__dirname, '../frontend/dist', 'index.html'));
     });
   }
 
-  server.listen(PORT, () => {
-    console.log(
-      `[AcadLytic] Server running at http://localhost:${PORT}`
-    );
+  if (port !== PORT) {
+    console.warn(`[AcadLytic] Port ${PORT} is busy; using ${port}.`);
+  }
+  server.listen(port, () => {
+    console.log(`[AcadLytic] Server running at http://localhost:${port}`);
   });
 }
 
