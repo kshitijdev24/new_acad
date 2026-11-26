@@ -1,0 +1,45 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "build": "node --check server.js",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
+    "start": "node server.js",
+    "dev": "node server.js",
+    "seed:pyq": "node scripts/seedPyq.js",
+    "seed:performance": "node scripts/seedPerformance.js",
+    "seed:gpa": "node scripts/seedGpa.js",
+    "seed:admin-dashboard": "node scripts/seedAdminDashboard.js",
+    "seed:assignments": "node scripts/seedAssignments.js",
+    "migrate:performance": "node scripts/migratePerformance.js",
+    "migrate:assignments": "node scripts/migrateAssignments.js",
+    "indexes": "node scripts/createIndexes.js"
+  },
+  "dependencies": {
+    "@google/genai": "^2.4.0",
+    "@google/generative-ai": "^0.24.1",
+    "@napi-rs/canvas": "^0.1.80",
+    "dotenv": "^17.4.2",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
+    "mammoth": "^1.9.0",
+    "mongoose": "^9.10.3",
+    "multer": "^2.0.2",
+    "nodemailer": "^10.6.1",
+    "pdfjs-dist": "^5.4.394",
+    "pdfkit": "^0.17.2",
+    "swagger-ui-express": "^5.0.1",
+    "tesseract.js": "^6.0.1",
+    "vite": "^8.3.0",
+    "ws": "^8.22.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "supertest": "^7.1.4"
+  }
+}

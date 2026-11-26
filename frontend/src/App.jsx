@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
 
 import {
-  INITIAL_STUDENT_USER,
+  GUEST_STUDENT_USER,
   INITIAL_COURSES,
   INITIAL_ASSIGNMENTS,
   INITIAL_ANNOUNCEMENTS,
   INITIAL_LECTURE_EVENTS,
   INITIAL_DOUBT_QUESTIONS,
   INITIAL_PYQ_TOPICS,
-  INITIAL_DOMAIN_RECORD,
 } from "./data/mockData.js";
 import { api } from "./services/api.js";
 
@@ -33,8 +32,8 @@ import { VoiceConversationModal } from "./components/VoiceConversationModal.jsx"
 // server code
 
 export default function App() {
-  // Current logged in user (defaults to Kshitij Jaiswal, author of the report)
-  const [currentUser, setCurrentUser] = useState(INITIAL_STUDENT_USER);
+  const [currentUser, setCurrentUser] = useState(GUEST_STUDENT_USER);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentTab, setCurrentTab] = useState("dashboard");
 
   // Dynamic application data state
@@ -43,37 +42,58 @@ export default function App() {
   const [announcements, setAnnouncements] = useState(INITIAL_ANNOUNCEMENTS);
   const [lectureEvents, setLectureEvents] = useState(INITIAL_LECTURE_EVENTS);
   const [doubtQuestions, setDoubtQuestions] = useState(INITIAL_DOUBT_QUESTIONS);
-  const [domainRecord, setDomainRecord] = useState(INITIAL_DOMAIN_RECORD);
 
-  // Sync with Express + MongoDB backend on mount
   useEffect(() => {
+    api.getCurrentUser()
+      .then((user) => {
+        if (!user) return;
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+        setCurrentTab(
+          user.role === "faculty"
+            ? "faculty-tools"
+            : user.role === "admin"
+              ? "admin-panel"
+              : "dashboard",
+        );
+      })
+      .catch((error) => {
+        console.error("Unable to restore the current session:", error);
+      });
+  }, []);
+
+  // Sync with the backend only after an authenticated session is available.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
     async function loadData() {
       try {
-        const [fetchedCourses, fetchedAssignments, fetchedDoubts] =
+        const [fetchedCourses, fetchedAssignments, fetchedDoubts, fetchedNotifications] =
           await Promise.all([
             api.getCourses().catch(() => null),
             api.getAssignments().catch(() => null),
             api.getDoubts().catch(() => null),
+            api.getAssignmentNotifications().catch(() => null),
           ]);
 
         if (Array.isArray(fetchedCourses) && fetchedCourses.length > 0) {
           setCourses(fetchedCourses);
         }
-        if (
-          Array.isArray(fetchedAssignments) &&
-          fetchedAssignments.length > 0
-        ) {
+        if (Array.isArray(fetchedAssignments)) {
           setAssignments(fetchedAssignments);
         }
         if (Array.isArray(fetchedDoubts) && fetchedDoubts.length > 0) {
           setDoubtQuestions(fetchedDoubts);
+        }
+        if (Array.isArray(fetchedNotifications?.items)) {
+          setNotifications(fetchedNotifications.items);
         }
       } catch (err) {
         console.warn("Backend sync fallback to mock data:", err);
       }
     }
     loadData();
-  }, []);
+  }, [isAuthenticated]);
 
   // Notifications
   const [notifications, setNotifications] = useState([
@@ -111,79 +131,15 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [adminDashboardRefreshKey, setAdminDashboardRefreshKey] = useState(0);
+
+  const handleAuthenticationRequired = () => {
+    setIsAuthenticated(false);
+    setIsAuthModalOpen(true);
+  };
 
   // Unread count
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
-
-  // Handlers for assignments
-  const handleAddAssignment = async (newAsg) => {
-    const id = `asg-${Date.now()}`;
-    const asgObject = { ...newAsg, id };
-    setAssignments((prev) => [asgObject, ...prev]);
-
-    // Async sync with backend
-    try {
-      await api.createAssignment(asgObject);
-    } catch (_) {}
-
-    // Push real notification
-    setNotifications((prev) => [
-      {
-        id: `notif-${Date.now()}`,
-        title: "New Assignment Added",
-        message: `${newAsg.title} added to ${newAsg.courseCode} syllabus.`,
-        time: "Just now",
-        read: false,
-        category: "assignment",
-      },
-      ...prev,
-    ]);
-  };
-
-  const handleUpdateAssignment = async (updated) => {
-    setAssignments((prev) =>
-      prev.map((a) => (a.id === updated.id ? updated : a)),
-    );
-    try {
-      await api.updateAssignment(updated.id, updated);
-    } catch (_) {}
-  };
-
-  const handleSubmitWork = async (assignmentId, fileName) => {
-    let updatedTarget = null;
-    setAssignments((prev) =>
-      prev.map((a) => {
-        if (a.id === assignmentId) {
-          updatedTarget = {
-            ...a,
-            status: "Completed",
-            submittedFileName: fileName,
-            submissionDate: new Date().toISOString().split("T")[0],
-          };
-          return updatedTarget;
-        }
-        return a;
-      }),
-    );
-
-    if (updatedTarget) {
-      try {
-        await api.updateAssignment(assignmentId, updatedTarget);
-      } catch (_) {}
-    }
-
-    setNotifications((prev) => [
-      {
-        id: `notif-${Date.now()}`,
-        title: "Deliverable Submitted",
-        message: `Successfully uploaded ${fileName} for grading.`,
-        time: "Just now",
-        read: false,
-        category: "assignment",
-      },
-      ...prev,
-    ]);
-  };
 
   // Handlers for doubt support
   const handleAddQuestion = async (newQ) => {
@@ -247,87 +203,82 @@ export default function App() {
     } catch (_) {}
   };
 
-  const handleGradeAssignment = async (assignmentId, marks, feedback) => {
-    setAssignments((prev) =>
-      prev.map((a) => {
-        if (a.id === assignmentId) {
-          const updated = {
-            ...a,
-            obtainedMarks: marks,
-            feedback,
-            status: "Completed",
-          };
-          api.updateAssignment(assignmentId, updated).catch(() => {});
-          return updated;
-        }
-        return a;
-      }),
-    );
-
-    setNotifications((prev) => [
-      {
-        id: `notif-${Date.now()}`,
-        title: "Assignment Graded",
-        message: `Evaluation completed: ${marks} marks recorded.`,
-        time: "Just now",
-        read: false,
-        category: "grade",
-      },
-      ...prev,
-    ]);
-  };
-
-  // Custom domain updater
-  const handleUpdateDomain = (newDomain) => {
-    setDomainRecord((prev) => ({
-      ...prev,
-      domain: newDomain,
-      status: "active",
-      sslActive: true,
-      connectedAt: new Date().toISOString(),
-    }));
+  const handleGradeAssignment = async (submissionId, marks, feedback) => {
+    await api.gradeAssignment(submissionId, { obtainedMarks: marks, feedback });
   };
 
   // Notifications drawer actions
   const handleMarkAllRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    if (isAuthenticated) api.markAllAssignmentNotificationsRead().catch((error) => {
+      console.warn("Unable to mark assignment notifications as read:", error);
+    });
   };
 
   const handleDismissNotification = (id) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
+    if (isAuthenticated && /^[a-f\d]{24}$/i.test(id)) {
+      api.deleteAssignmentNotification(id).catch((error) => {
+        console.warn("Unable to dismiss assignment notification:", error);
+      });
+    }
+  };
+
+  const handleOpenNotifications = async () => {
+    setIsNotificationsOpen(true);
+    if (!isAuthenticated) return;
+    try {
+      const result = await api.getAssignmentNotifications();
+      setNotifications(result.items || []);
+    } catch (error) {
+      console.warn("Unable to refresh assignment notifications:", error);
+    }
   };
 
   // Role authentication change
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
+    setIsAuthenticated(!user.isGuest);
     if (user.role === "faculty") {
       setCurrentTab("faculty-tools");
     } else if (user.role === "admin") {
       setCurrentTab("admin-panel");
-    } else {
+    } else if (currentTab !== "pyq" && currentTab !== "ai-chat") {
       setCurrentTab("dashboard");
     }
   };
 
-  const handleLogout = () => {
-    setIsAuthModalOpen(true);
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+      setCurrentUser(GUEST_STUDENT_USER);
+      setIsAuthenticated(false);
+      setCurrentTab("dashboard");
+    } catch (error) {
+      window.alert(error.message);
+    }
+  };
+
+  const openDomainModal = () => {
+    if (currentUser?.role === "admin") setIsDomainModalOpen(true);
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900">
-      {/* Top Banner: Bharati Vidyapeeth's College of Engineering & Domain Badge */}
+      {/* Top banner: institution and custom-domain status */}
       <InstitutionalBanner
         currentUser={currentUser}
-        domainRecord={domainRecord}
-        onOpenDomainSettings={() => setIsDomainModalOpen(true)}
+        onOpenDomainSettings={openDomainModal}
+        refreshKey={adminDashboardRefreshKey}
       />
 
       {/* Strict 3-Zone Navigation Header */}
       <Header
         currentUser={currentUser}
+        isAuthenticated={isAuthenticated}
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
-        onOpenNotifications={() => setIsNotificationsOpen(true)}
+        onOpenNotifications={handleOpenNotifications}
         unreadNotificationsCount={unreadNotificationsCount}
         onLogout={handleLogout}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
@@ -352,11 +303,8 @@ export default function App() {
 
         {currentTab === "assignments" && (
           <AssignmentTracker
-            assignments={assignments}
-            courses={courses}
-            onAddAssignment={handleAddAssignment}
-            onUpdateAssignment={handleUpdateAssignment}
-            onSubmitWork={handleSubmitWork}
+            currentUser={currentUser}
+            onAuthenticationRequired={handleAuthenticationRequired}
           />
         )}
 
@@ -382,10 +330,28 @@ export default function App() {
           <PyqSyllabusAnalyzer
             courses={courses}
             pyqTopics={INITIAL_PYQ_TOPICS}
+            isAuthenticated={isAuthenticated}
+            onAuthenticationRequired={handleAuthenticationRequired}
           />
         )}
 
-        {currentTab === "ai-chat" && <GeminiChatbot />}
+        {currentTab === "ai-chat" &&
+          (isAuthenticated ? (
+            <GeminiChatbot onAuthenticationRequired={handleAuthenticationRequired} />
+          ) : (
+            <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
+              <h1 className="text-xl font-bold text-slate-900">Sign in to use AI chat</h1>
+              <p className="mt-2 text-sm text-slate-600">
+                Your guest demo can browse the academic tools. Sign in to send messages to Gemini.
+              </p>
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="mt-5 rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+              >
+                Sign in
+              </button>
+            </div>
+          ))}
 
         {currentTab === "faculty-tools" && (
           <FacultyDashboard
@@ -402,26 +368,25 @@ export default function App() {
         {currentTab === "admin-panel" && (
           <AdminDashboard
             currentUser={currentUser}
-            domainRecord={domainRecord}
-            courses={courses}
-            onOpenDomainModal={() => setIsDomainModalOpen(true)}
+            refreshKey={adminDashboardRefreshKey}
+            onOpenDomainModal={openDomainModal}
+            onDashboardUpdated={() => setAdminDashboardRefreshKey((key) => key + 1)}
           />
         )}
       </main>
 
       {/* Footer with Legal & Institutional Links */}
       <Footer
-        domainRecord={domainRecord}
+        currentUser={currentUser}
         onOpenPrivacy={() => setIsPrivacyModalOpen(true)}
         onOpenTerms={() => setIsTermsModalOpen(true)}
-        onOpenDomainModal={() => setIsDomainModalOpen(true)}
+        onOpenDomainModal={openDomainModal}
       />
 
       {/* Modals and Drawers */}
-      {isDomainModalOpen && (
+      {isDomainModalOpen && currentUser?.role === "admin" && (
         <CustomDomainModal
-          domainRecord={domainRecord}
-          onUpdateDomain={handleUpdateDomain}
+          onChanged={() => setAdminDashboardRefreshKey((key) => key + 1)}
           onClose={() => setIsDomainModalOpen(false)}
         />
       )}

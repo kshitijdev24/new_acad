@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { api } from '../services/api.js';
 
 export const FacultyDashboard = ({
   currentUser,
@@ -11,14 +12,54 @@ export const FacultyDashboard = ({
 }) => {
   const [selectedCourseCode, setSelectedCourseCode] = useState(courses[0]?.code ?? 'CS101');
   const [gradingModalAssignment, setGradingModalAssignment] = useState(null);
-  const [scoreInput, setScoreInput] = useState('90');
-  const [feedbackInput, setFeedbackInput] = useState('Excellent implementation and clarity.');
+  const [scoreInput, setScoreInput] = useState('');
+  const [feedbackInput, setFeedbackInput] = useState('');
+  const [courseSubmissionRows, setCourseSubmissionRows] = useState([]);
+  const [submissionsLoading, setSubmissionsLoading] = useState(false);
+  const [submissionsError, setSubmissionsError] = useState('');
+  const [evaluationError, setEvaluationError] = useState('');
 
   const currentCourse = courses.find((c) => c.code === selectedCourseCode) ?? courses[0];
 
-  const pendingGradingAssignments = (assignments || []).filter(
-    (a) => a.courseCode === selectedCourseCode && a.status === 'Completed'
+  const currentCourseAssignments = useMemo(
+    () => assignments.filter((assignment) => assignment.courseCode === selectedCourseCode),
+    [assignments, selectedCourseCode]
   );
+  const pendingGradingAssignments = courseSubmissionRows.filter(
+    (row) => row.status === 'submitted' || row.status === 'late'
+  );
+  const enrolledCount = courseSubmissionRows[0]?.counts?.total || currentCourse?.enrolledCount || 0;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSubmissions() {
+      if (!currentCourseAssignments.length) {
+        setCourseSubmissionRows([]);
+        return;
+      }
+      setSubmissionsLoading(true);
+      setSubmissionsError('');
+      try {
+        const responses = await Promise.all(currentCourseAssignments.map((assignment) =>
+          api.getAssignmentSubmissions(assignment.courseId, assignment.id)
+        ));
+        if (cancelled) return;
+        setCourseSubmissionRows(responses.flatMap((response, index) =>
+          (response.items || []).map((submission) => ({
+            ...submission,
+            assignment: currentCourseAssignments[index],
+            counts: response.counts,
+          }))
+        ));
+      } catch (error) {
+        if (!cancelled) setSubmissionsError(error.message);
+      } finally {
+        if (!cancelled) setSubmissionsLoading(false);
+      }
+    }
+    loadSubmissions();
+    return () => { cancelled = true; };
+  }, [currentCourseAssignments]);
 
   const pendingDoubts = (questions || []).filter(
     (q) => q.courseCode === selectedCourseCode && q.status === 'Pending'
@@ -38,12 +79,30 @@ export const FacultyDashboard = ({
     });
   };
 
-  const handleSaveGrading = (e) => {
+  const handleSaveGrading = async (e) => {
     e.preventDefault();
     if (!gradingModalAssignment) return;
-
-    onGradeAssignment(gradingModalAssignment.id, Number(scoreInput) || 0, feedbackInput.trim());
-    setGradingModalAssignment(null);
+    setEvaluationError('');
+    try {
+      await onGradeAssignment(
+        gradingModalAssignment.submissionId,
+        Number(scoreInput),
+        feedbackInput.trim()
+      );
+      setGradingModalAssignment(null);
+      const responses = await Promise.all(currentCourseAssignments.map((assignment) =>
+        api.getAssignmentSubmissions(assignment.courseId, assignment.id)
+      ));
+      setCourseSubmissionRows(responses.flatMap((response, index) =>
+        (response.items || []).map((submission) => ({
+          ...submission,
+          assignment: currentCourseAssignments[index],
+          counts: response.counts,
+        }))
+      ));
+    } catch (error) {
+      setEvaluationError(error.message);
+    }
   };
 
   return (
@@ -85,9 +144,9 @@ export const FacultyDashboard = ({
             Enrolled Students
           </div>
           <div className="text-3xl font-extrabold text-slate-900 font-mono tabular-nums mt-1">
-            64
+            {enrolledCount}
           </div>
-          <div className="text-xs text-slate-500 mt-0.5">Section CSE-A (Semester 5)</div>
+          <div className="text-xs text-slate-500 mt-0.5">{currentCourse?.code || 'Selected course'} enrollment</div>
         </div>
 
         <div className="p-4 bg-white border border-slate-200 rounded-lg">
@@ -192,47 +251,62 @@ export const FacultyDashboard = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {(assignments || []).map((asg) => (
-                <tr key={asg.id} className="hover:bg-slate-50">
+              {courseSubmissionRows.map((row) => (
+                <tr key={`${row.submissionId || row.studentId}-${row.assignment.id}`} className="hover:bg-slate-50">
                   <td className="py-2.5 px-3 font-semibold text-slate-900">
-                    {asg.title}
+                    {row.assignment.title}
                   </td>
-                  <td className="py-2.5 px-3 text-slate-700">Kshitij Jaiswal (09511502722)</td>
+                  <td className="py-2.5 px-3 text-slate-700">{row.name || row.enrollmentNumber || 'Student'}</td>
                   <td className="py-2.5 px-3 font-mono text-slate-500">
-                    {asg.submittedFileName ?? 'Pending Submission'}
+                    {row.files?.length
+                      ? row.files.map((file) => (
+                        <a key={file.downloadUrl} href={file.downloadUrl} className="mr-2 text-blue-700 underline">
+                          {file.originalName}
+                        </a>
+                      ))
+                      : 'No file submitted'}
                   </td>
                   <td className="py-2.5 px-3">
                     <span
                       className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
-                        asg.status === 'Completed'
+                        row.status === 'graded'
                           ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
+                          : row.status === 'submitted' || row.status === 'late'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-slate-100 text-slate-700'
                       }`}
                     >
-                      {asg.status}
+                      {row.status}
                     </span>
                   </td>
                   <td className="py-2.5 px-3 font-mono">
-                    {asg.obtainedMarks !== undefined
-                      ? `${asg.obtainedMarks} / ${asg.maxMarks}`
+                    {row.obtainedMarks !== null && row.obtainedMarks !== undefined
+                      ? `${row.obtainedMarks} / ${row.assignment.maxMarks}`
                       : 'Not Graded'}
                   </td>
                   <td className="py-2.5 px-3 text-right">
-                    <button
-                      onClick={() => {
-                        setGradingModalAssignment(asg);
-                        setScoreInput(String(asg.obtainedMarks ?? 92));
-                        setFeedbackInput(asg.feedback ?? 'Well-structured response.');
-                      }}
-                      className="px-2.5 py-1 text-xs font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors"
-                    >
-                      Evaluate
-                    </button>
+                    {(row.status === 'submitted' || row.status === 'late') && (
+                      <button
+                        onClick={() => {
+                          setGradingModalAssignment(row);
+                          setScoreInput(row.obtainedMarks == null ? '' : String(row.obtainedMarks));
+                          setFeedbackInput(row.feedback || '');
+                        }}
+                        className="px-2.5 py-1 text-xs font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors"
+                      >
+                        Evaluate
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {submissionsLoading && <p className="py-4 text-center text-xs text-slate-500">Loading course submissions...</p>}
+          {submissionsError && <p role="alert" className="py-4 text-center text-xs text-red-700">{submissionsError}</p>}
+          {!submissionsLoading && !submissionsError && courseSubmissionRows.length === 0 && (
+            <p className="py-4 text-center text-xs text-slate-500">No enrolled students or submissions for this course yet.</p>
+          )}
         </div>
       </div>
 
@@ -241,19 +315,20 @@ export const FacultyDashboard = ({
         <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
           <div className="bg-white border border-slate-300 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-xl space-y-4">
             <h3 className="text-base font-bold text-slate-900 pb-2 border-b border-slate-200">
-              Evaluate: {gradingModalAssignment.title}
+              Evaluate: {gradingModalAssignment.assignment.title}
             </h3>
 
             <form onSubmit={handleSaveGrading} className="space-y-4 text-xs">
+              {evaluationError && <p role="alert" className="rounded border border-red-200 bg-red-50 p-2 text-red-800">{evaluationError}</p>}
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Marks Awarded (Out of {gradingModalAssignment.maxMarks})
+                  Marks Awarded (Out of {gradingModalAssignment.assignment.maxMarks})
                 </label>
                 <input
                   type="number"
                   required
                   min="0"
-                  max={gradingModalAssignment.maxMarks}
+                  max={gradingModalAssignment.assignment.maxMarks}
                   value={scoreInput}
                   onChange={(e) => setScoreInput(e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-slate-900 font-mono"

@@ -270,7 +270,7 @@ Provide 3 high-impact, concrete cognitive pacing recommendations (e.g. interleav
       body: JSON.stringify({
         message: prompt,
         role: 'study_planner',
-        model: 'gemini-3.5-flash',
+        model: 'gemini-3.8-flash',
       }),
     });
 

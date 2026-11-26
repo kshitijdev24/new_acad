@@ -9,8 +9,8 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-export const GeminiChatbot = () => {
-  const [selectedModel, setSelectedModel] = useState('gemini-3.5-flash');
+export const GeminiChatbot = ({ onAuthenticationRequired }) => {
+  const [selectedModel, setSelectedModel] = useState('gemini-3.8-flash');
   const [selectedRole, setSelectedRole] = useState('academic_tutor');
   const [useGoogleSearch, setUseGoogleSearch] = useState(false);
 
@@ -21,7 +21,7 @@ export const GeminiChatbot = () => {
       role: 'model',
       text: 'Welcome to the AcadLytic Technical Consultation Center. Select your curriculum role above and ask your query regarding algorithms, mathematics, physics derivations, or semester examination strategies.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      modelUsed: 'gemini-3.5-flash',
+      modelUsed: 'gemini-3.8-flash',
     },
   ]);
 
@@ -78,6 +78,11 @@ export const GeminiChatbot = () => {
           useGoogleSearch,
         }),
       });
+
+      if (res.status === 401) {
+        onAuthenticationRequired();
+        throw new Error('Your session has expired. Please sign in again.');
+      }
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
@@ -152,8 +157,8 @@ export const GeminiChatbot = () => {
               onChange={(e) => setSelectedModel(e.target.value)}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded text-slate-900 font-mono font-medium focus:outline-none focus:ring-1 focus:ring-blue-700"
             >
-              <option value="gemini-3.5-flash">
-                gemini-3.5-flash (Standard &amp; Balanced)
+              <option value="gemini-3.8-flash">
+                gemini-3.8-flash (Standard &amp; Balanced)
               </option>
               <option value="gemini-3.1-pro-preview">
                 gemini-3.1-pro-preview (Complex Tasks &amp; Math)

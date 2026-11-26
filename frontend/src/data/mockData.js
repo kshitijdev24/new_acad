@@ -21,6 +21,14 @@ export const INITIAL_STUDENT_USER = {
   avatarInitials: 'KJ',
 };
 
+export const GUEST_STUDENT_USER = {
+  id: 'guest-student',
+  name: 'Guest Student',
+  role: 'student',
+  avatarInitials: 'GS',
+  isGuest: true,
+};
+
 export const INITIAL_FACULTY_USER = {
   id: 'usr-faculty-01',
   name: 'Ms. Deepika Yadav',
@@ -455,13 +463,3 @@ export const INITIAL_PYQ_TOPICS = [
     ],
   },
 ];
-
-export const INITIAL_DOMAIN_RECORD = {
-  domain: 'portal.acadlytic.bvcoe.edu.in',
-  status: 'active',
-  recordType: 'CNAME',
-  host: 'portal',
-  target: 'cname.acadlytic-system.net',
-  sslActive: true,
-  connectedAt: '2026-08-15 09:00:00 UTC',
-};

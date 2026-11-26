@@ -2,7 +2,7 @@ import React from "react";
 import { Shield, FileText, Globe } from "lucide-react";
 
 export const Footer = ({
-  domainRecord,
+  currentUser,
   onOpenPrivacy,
   onOpenTerms,
   onOpenDomainModal,
@@ -16,13 +16,10 @@ export const Footer = ({
               AcadLytic - Academics Meet Analytics
             </div>
             <p className="text-slate-500 mt-0.5">
-              Developed by Kshitij Jaiswal (09511502722) under guidance of Ms.
-              Deepika Yadav.
+              Developed by Kshitij Jaiswal
             </p>
             <p className="text-slate-500 mt-0.5 leading-relaxed">
-              Department of Computer Science &amp; Engineering, Bharati
-              Vidyapeeth&apos;s College of Engineering (BVCOE), New Delhi -
-              110063.
+              {[currentUser?.department, currentUser?.institution].filter(Boolean).join(', ')}
             </p>
           </div>
 
@@ -43,29 +40,28 @@ export const Footer = ({
               <span>Terms &amp; Conditions</span>
             </button>
             <span className="text-slate-300">·</span>
-            <button
-              onClick={onOpenDomainModal}
-              title="Custom Domain Configuration"
-              aria-label="Configure custom domain"
-              className="text-slate-600 hover:text-blue-900 transition-colors flex items-center gap-1 font-mono text-[11px] cursor-pointer"
-            >
-              <Globe className="w-3.5 h-3.5" />
-              <span>
-                {domainRecord?.domain || "portal.acadlytic.bvcoe.edu.in"}
-              </span>
-            </button>
+            {currentUser?.role === 'admin' && (
+              <button
+                type="button"
+                onClick={onOpenDomainModal}
+                title="Custom Domain Configuration"
+                aria-label="Configure custom domain"
+                className="flex cursor-pointer items-center gap-1 font-mono text-[11px] text-slate-600 transition-colors hover:text-blue-900"
+              >
+                <Globe className="h-3.5 w-3.5" />
+                <span>Custom domain settings</span>
+              </button>
+            )}
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-between pt-4 text-[11px] text-slate-400 gap-2 text-center sm:text-left">
           <div>
-            &copy; 2026 AcadLytic Academic System. Bharati Vidyapeeth&apos;s
-            College of Engineering. All rights reserved.
+            &copy; 2026 AcadLytic Academic System.
+            {currentUser?.institution ? ` ${currentUser.institution}.` : ''}
+            {' '}All rights reserved.
           </div>
-          <div>
-            Affiliated to Guru Gobind Singh Indraprastha University (GGSIPU),
-            New Delhi.
-          </div>
+          <div>Institutional information is managed by your administrator.</div>
         </div>
       </div>
     </footer>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Plus,
   AlertTriangle,
@@ -7,32 +7,61 @@ import {
   FileText,
 } from 'lucide-react';
 import { isAssignmentDueWithin24Hours, formatTimeRemaining, formatDueDateTime } from '../utils/deadline.js';
+import { useAssignmentTracker } from '../hooks/useAssignmentTracker.js';
 
 export const AssignmentTracker = ({
-  assignments = [],
-  courses = [],
-  onAddAssignment,
-  onUpdateAssignment,
-  onSubmitWork,
+  currentUser,
+  onAuthenticationRequired,
 }) => {
+  const {
+    assignments,
+    courses,
+    stats,
+    isLoading,
+    error,
+    refresh,
+    createAssignment,
+    updateAssignment,
+    deleteAssignment,
+    setCompletion,
+    submitAssignment,
+    getSubmissions,
+    gradeSubmission,
+  } = useAssignmentTracker();
   const [statusFilter, setStatusFilter] = useState('All');
   const [courseFilter, setCourseFilter] = useState('All');
   const [sortBy, setSortBy] = useState('dueDate');
+  const [actionError, setActionError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [courseSubmissions, setCourseSubmissions] = useState([]);
+  const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
+  const [gradingValues, setGradingValues] = useState({});
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
   const [detailsAssignment, setDetailsAssignment] = useState(null);
   const [submittingAssignment, setSubmittingAssignment] = useState(null);
-  const [submissionFileName, setSubmissionFileName] = useState('');
+  const [submissionFile, setSubmissionFile] = useState(null);
+  const [submissionNote, setSubmissionNote] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
 
   // New assignment form state
   const [newTitle, setNewTitle] = useState('');
-  const [newCourseCode, setNewCourseCode] = useState(courses[0]?.code ?? 'CS101');
+  const [newCourseId, setNewCourseId] = useState('');
   const [newWeight, setNewWeight] = useState('10');
-  const [newDueDate, setNewDueDate] = useState('2026-10-25');
+  const [newDueDate, setNewDueDate] = useState(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+  });
   const [newDescription, setNewDescription] = useState('');
   const [newMaxMarks, setNewMaxMarks] = useState('100');
+
+  useEffect(() => {
+    if (!newCourseId && courses.length) setNewCourseId(String(courses[0]._id || courses[0].id));
+  }, [courses, newCourseId]);
 
   // Filtered and sorted assignments
   const filteredAssignments = useMemo(() => {
@@ -57,45 +86,111 @@ export const AssignmentTracker = ({
       });
   }, [assignments, statusFilter, courseFilter, sortBy]);
 
-  // Statistics
-  const totalCount = assignments.length;
-  const completedCount = assignments.filter((a) => a.status === 'Completed').length;
-  const overdueCount = assignments.filter((a) => a.status === 'Overdue').length;
-  const upcomingCount = assignments.filter((a) => a.status === 'Pending').length;
-  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-
-  const handleCreateAssignment = (e) => {
+  const handleCreateAssignment = async (e) => {
     e.preventDefault();
-    if (!newTitle.trim()) return;
-
-    onAddAssignment({
-      title: newTitle.trim(),
-      courseCode: newCourseCode,
-      weightPercent: Number(newWeight) || 10,
-      description: newDescription.trim() || 'Complete the assignment according to course syllabus.',
-      dueDate: newDueDate,
-      status: 'Pending',
-      maxMarks: Number(newMaxMarks) || 100,
-    });
-
-    setNewTitle('');
-    setNewDescription('');
-    setIsAddModalOpen(false);
+    if (!newTitle.trim() || !newCourseId) return;
+    setIsSaving(true);
+    setActionError('');
+    try {
+      await createAssignment({
+        title: newTitle.trim(),
+        courseId: newCourseId,
+        weightPercent: Number(newWeight),
+        description: newDescription.trim(),
+        dueDate: newDueDate,
+        maxMarks: Number(newMaxMarks),
+      });
+      setNewTitle('');
+      setNewDescription('');
+      setIsAddModalOpen(false);
+    } catch (requestError) {
+      if (requestError.status === 401) onAuthenticationRequired?.();
+      setActionError(requestError.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSaveEdit = (e) => {
+  const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!editingAssignment) return;
-    onUpdateAssignment(editingAssignment);
-    setEditingAssignment(null);
+    setIsSaving(true);
+    setActionError('');
+    try {
+      await updateAssignment(editingAssignment);
+      setEditingAssignment(null);
+    } catch (requestError) {
+      if (requestError.status === 401) onAuthenticationRequired?.();
+      setActionError(requestError.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSubmitFileConfirm = (e) => {
+  const handleSubmitFileConfirm = async (e) => {
     e.preventDefault();
-    if (!submittingAssignment || !submissionFileName.trim()) return;
-    onSubmitWork(submittingAssignment.id, submissionFileName.trim());
-    setSubmittingAssignment(null);
-    setSubmissionFileName('');
+    if (!submittingAssignment || !submissionFile) return;
+    setIsSaving(true);
+    setActionError('');
+    try {
+    setUploadProgress(0);
+    await submitAssignment(
+      submittingAssignment.id,
+      submissionFile,
+      submissionNote,
+      setUploadProgress
+    );
+      setSubmittingAssignment(null);
+      setSubmissionFile(null);
+      setSubmissionNote('');
+    setUploadProgress(0);
+    } catch (requestError) {
+      if (requestError.status === 401) onAuthenticationRequired?.();
+      setActionError(requestError.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const openAssignmentDetails = async (assignment) => {
+    setDetailsAssignment(assignment);
+    setCourseSubmissions([]);
+    if (currentUser?.role !== 'faculty') return;
+    setIsLoadingSubmissions(true);
+    try {
+      const result = await getSubmissions(assignment.courseId, assignment.id);
+      setCourseSubmissions(result.items || []);
+    } catch (requestError) {
+      setActionError(requestError.message);
+    } finally {
+      setIsLoadingSubmissions(false);
+    }
+  };
+
+  const handleGradeSubmission = async (submission) => {
+    const value = gradingValues[submission.submissionId];
+    if (!value || !submission.submissionId) return;
+    setActionError('');
+    try {
+      await gradeSubmission(submission.submissionId, {
+        obtainedMarks: Number(value.obtainedMarks),
+        feedback: value.feedback || '',
+      });
+      const result = await getSubmissions(detailsAssignment.courseId, detailsAssignment.id);
+      setCourseSubmissions(result.items || []);
+    } catch (requestError) {
+      setActionError(requestError.message);
+    }
+  };
+
+  const handleDeleteAssignment = async (assignment) => {
+    if (!window.confirm(`Delete "${assignment.title}"?`)) return;
+    setActionError('');
+    try {
+      await deleteAssignment(assignment.id);
+    } catch (requestError) {
+      setActionError(requestError.message);
+    }
   };
 
   return (
@@ -111,14 +206,28 @@ export const AssignmentTracker = ({
           </p>
         </div>
 
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-md transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Assignment
-        </button>
+        {['student', 'faculty'].includes(currentUser?.role) && (
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-md transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Assignment
+          </button>
+        )}
       </div>
+
+      {error && (
+        <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-800">
+          <span>{error.message}</span>
+          <button onClick={refresh} className="font-semibold underline">Retry</button>
+        </div>
+      )}
+      {actionError && (
+        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-800">
+          {actionError}
+        </div>
+      )}
 
       {/* Filter Row */}
       <div className="bg-white border border-slate-200 rounded-lg p-4">
@@ -179,9 +288,17 @@ export const AssignmentTracker = ({
 
         {/* Assignment Cards List */}
         <div className="mt-4 divide-y divide-slate-100">
-          {filteredAssignments.length === 0 ? (
+          {isLoading ? (
+            <div className="space-y-3 py-5" aria-label="Loading assignments">
+              {[0, 1, 2].map((item) => (
+                <div key={item} className="h-20 animate-pulse rounded bg-slate-100" />
+              ))}
+            </div>
+          ) : filteredAssignments.length === 0 ? (
             <div className="py-12 text-center text-slate-500 text-xs">
-              No assignments match the selected filter parameters.
+              {assignments.length === 0
+                ? 'No assignments yet. Create an assignment to get started.'
+                : 'No assignments match the selected filter parameters.'}
             </div>
           ) : (
             filteredAssignments.map((assignment) => (
@@ -191,20 +308,23 @@ export const AssignmentTracker = ({
               >
                 <div className="space-y-1.5 flex-1">
                   <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={assignment.status === 'Completed'}
-                      onChange={() => {
-                        const newStatus =
-                          assignment.status === 'Completed' ? 'Pending' : 'Completed';
-                        onUpdateAssignment({
-                          ...assignment,
-                          status: newStatus,
-                          submissionDate: newStatus === 'Completed' ? '2026-10-09' : undefined,
-                        });
-                      }}
-                      className="rounded border-slate-300 text-blue-700 focus:ring-blue-600 h-4 w-4 cursor-pointer"
-                    />
+                    {assignment.source === 'personal' ? (
+                      <input
+                        type="checkbox"
+                        checked={assignment.status === 'Completed'}
+                        aria-label={`Mark ${assignment.title} completed`}
+                        onChange={async () => {
+                          try {
+                            await setCompletion(assignment.id, assignment.status !== 'Completed');
+                          } catch (requestError) {
+                            setActionError(requestError.message);
+                          }
+                        }}
+                        className="rounded border-slate-300 text-blue-700 focus:ring-blue-600 h-4 w-4 cursor-pointer"
+                      />
+                    ) : (
+                      <span className="w-4" aria-hidden="true" />
+                    )}
                     <h3 className="text-sm font-bold text-slate-900">
                       {assignment.title}
                     </h3>
@@ -257,25 +377,36 @@ export const AssignmentTracker = ({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    {assignment.status !== 'Completed' && (
+                    {assignment.canSubmit && (
                       <button
                         onClick={() => {
                           setSubmittingAssignment(assignment);
-                          setSubmissionFileName(`${assignment.courseCode.toLowerCase()}_solution.pdf`);
+                          setSubmissionFile(null);
+                          setSubmissionNote('');
                         }}
                         className="px-2.5 py-1 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded border border-blue-700 transition-colors"
                       >
                         Submit
                       </button>
                     )}
+                    {assignment.canEdit && (
+                      <>
+                        <button
+                          onClick={() => setEditingAssignment(assignment)}
+                          className="px-2.5 py-1 text-xs font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAssignment(assignment)}
+                          className="px-2.5 py-1 text-xs font-medium text-red-700 bg-white hover:bg-red-50 border border-red-200 rounded transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
                     <button
-                      onClick={() => setEditingAssignment(assignment)}
-                      className="px-2.5 py-1 text-xs font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => setDetailsAssignment(assignment)}
+                      onClick={() => openAssignmentDetails(assignment)}
                       className="px-2.5 py-1 text-xs font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded transition-colors"
                     >
                       Details
@@ -298,10 +429,10 @@ export const AssignmentTracker = ({
               Completion Rate
             </div>
             <div className="text-3xl font-extrabold text-slate-900 font-mono tabular-nums mt-1">
-              {completionRate}%
+              {stats.completionRate || 0}%
             </div>
             <div className="text-xs text-slate-500 mt-1">
-              {completedCount} of {totalCount} assignments completed
+              {stats.completedCount || 0} of {stats.totalCount || 0} assignments completed
             </div>
           </div>
 
@@ -310,7 +441,7 @@ export const AssignmentTracker = ({
               Upcoming Due
             </div>
             <div className="text-3xl font-extrabold text-blue-900 font-mono tabular-nums mt-1">
-              {upcomingCount === 0 ? 'None' : upcomingCount}
+              {(stats.upcomingCount || 0) === 0 ? 'None' : stats.upcomingCount}
             </div>
             <div className="text-xs text-slate-500 mt-1">
               Within current academic cycle
@@ -321,8 +452,8 @@ export const AssignmentTracker = ({
             <div className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
               Overdue
             </div>
-            <div className={`text-3xl font-extrabold font-mono tabular-nums mt-1 ${overdueCount > 0 ? 'text-red-700' : 'text-slate-900'}`}>
-              {overdueCount}
+            <div className={`text-3xl font-extrabold font-mono tabular-nums mt-1 ${(stats.overdueCount || 0) > 0 ? 'text-red-700' : 'text-slate-900'}`}>
+              {stats.overdueCount || 0}
             </div>
             <div className="text-xs text-slate-500 mt-1">
               Requires immediate faculty submission
@@ -346,6 +477,7 @@ export const AssignmentTracker = ({
               </div>
 
             <form onSubmit={handleCreateAssignment} className="space-y-4 text-xs">
+              {actionError && <p role="alert" className="rounded border border-red-200 bg-red-50 p-2 text-red-800">{actionError}</p>}
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
                   Assignment Title
@@ -366,12 +498,14 @@ export const AssignmentTracker = ({
                     Course Code
                   </label>
                   <select
-                    value={newCourseCode}
-                    onChange={(e) => setNewCourseCode(e.target.value)}
+                    required
+                    value={newCourseId}
+                    onChange={(e) => setNewCourseId(e.target.value)}
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-700 font-mono"
                   >
+                    <option value="" disabled>Select a course</option>
                     {courses.map((c) => (
-                      <option key={c.code} value={c.code}>
+                      <option key={c._id || c.id} value={c._id || c.id}>
                         {c.code} - {c.name}
                       </option>
                     ))}
@@ -445,9 +579,10 @@ export const AssignmentTracker = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded"
+                  disabled={isSaving || !courses.length}
+                  className="px-4 py-2 font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded disabled:opacity-50"
                 >
-                  Create Assignment
+                  {isSaving ? 'Creating...' : 'Create Assignment'}
                 </button>
               </div>
             </form>
@@ -470,6 +605,7 @@ export const AssignmentTracker = ({
             </div>
 
             <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              {actionError && <p role="alert" className="rounded border border-red-200 bg-red-50 p-2 text-red-800">{actionError}</p>}
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
                   Title
@@ -487,37 +623,43 @@ export const AssignmentTracker = ({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
-                    Status
-                  </label>
-                  <select
-                    value={editingAssignment.status}
-                    onChange={(e) =>
-                      setEditingAssignment({
-                        ...editingAssignment,
-                        status: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-slate-900"
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Overdue">Overdue</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
                     Due Date
                   </label>
                   <input
                     type="date"
-                    value={editingAssignment.dueDate}
+                    value={editingAssignment.dueDate?.slice(0, 10) || ''}
                     onChange={(e) =>
                       setEditingAssignment({ ...editingAssignment, dueDate: e.target.value })
                     }
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-slate-900 font-mono"
                   />
                 </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Evaluation Weight (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={editingAssignment.weightPercent}
+                    onChange={(e) => setEditingAssignment({ ...editingAssignment, weightPercent: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-slate-900"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Maximum Marks
+                </label>
+                <input
+                  type="number"
+                  min="10"
+                  max="200"
+                  value={editingAssignment.maxMarks}
+                  onChange={(e) => setEditingAssignment({ ...editingAssignment, maxMarks: Number(e.target.value) })}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-slate-900"
+                />
               </div>
 
               <div>
@@ -544,9 +686,10 @@ export const AssignmentTracker = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded"
+                  disabled={isSaving}
+                  className="px-4 py-2 font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded disabled:opacity-50"
                 >
-                  Save Changes
+                  {isSaving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>
@@ -574,6 +717,7 @@ export const AssignmentTracker = ({
             </div>
 
             <div className="space-y-3 text-xs text-slate-700">
+              {actionError && <p role="alert" className="rounded border border-red-200 bg-red-50 p-2 text-red-800">{actionError}</p>}
               <div className="p-3 bg-slate-50 border border-slate-200 rounded">
                 <div className="font-semibold text-slate-900 mb-1">Instructions:</div>
                 <p className="leading-relaxed">{detailsAssignment.description}</p>
@@ -590,7 +734,7 @@ export const AssignmentTracker = ({
                 </div>
                 <div>
                   <span className="text-slate-500">Submission Due: </span>
-                  <span className="font-bold text-slate-900 font-mono">{detailsAssignment.dueDate}</span>
+                  <span className="font-bold text-slate-900 font-mono">{formatDueDateTime(detailsAssignment.dueDate)}</span>
                 </div>
                 <div>
                   <span className="text-slate-500">Current Status: </span>
@@ -598,12 +742,17 @@ export const AssignmentTracker = ({
                 </div>
               </div>
 
-              {detailsAssignment.submittedFileName && (
+              {detailsAssignment.submission?.fileName && (
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded flex items-center gap-2">
                   <FileText className="w-4 h-4 text-blue-800" />
                   <div>
                     <div className="font-semibold text-blue-950">Submitted Artifact:</div>
-                    <div className="font-mono text-slate-600">{detailsAssignment.submittedFileName}</div>
+                    <a
+                      className="font-mono text-blue-700 underline"
+                      href={detailsAssignment.submission.downloadUrl}
+                    >
+                      {detailsAssignment.submission.fileName}
+                    </a>
                   </div>
                 </div>
               )}
@@ -615,6 +764,75 @@ export const AssignmentTracker = ({
                   {detailsAssignment.obtainedMarks !== undefined && (
                     <div className="mt-1 font-bold text-emerald-950 font-mono">
                       Graded Score: {detailsAssignment.obtainedMarks} / {detailsAssignment.maxMarks}
+                    </div>
+                  )}
+
+                  {currentUser?.role === 'faculty' && (
+                    <div className="space-y-3 border-t border-slate-200 pt-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-slate-900">Student Submissions</h4>
+                        {isLoadingSubmissions && <span className="text-slate-500">Loading...</span>}
+                      </div>
+                      {!isLoadingSubmissions && courseSubmissions.length === 0 && (
+                        <p className="text-slate-500">No enrolled student submissions found.</p>
+                      )}
+                      {courseSubmissions.map((submission) => (
+                        <div key={submission.studentId} className="rounded border border-slate-200 p-3 space-y-2">
+                          <div className="flex justify-between gap-3">
+                            <span className="font-semibold text-slate-900">{submission.name || submission.enrollmentNumber}</span>
+                            <span className="text-slate-600 capitalize">{submission.status}</span>
+                          </div>
+                          {submission.files?.map((file) => (
+                            <a key={file.downloadUrl} href={file.downloadUrl} className="block text-blue-700 underline">
+                              {file.originalName}
+                            </a>
+                          ))}
+                          {submission.status !== 'pending' && submission.status !== 'graded' && (
+                            <div className="grid gap-2 sm:grid-cols-3">
+                              <input
+                                type="number"
+                                min="0"
+                                max={detailsAssignment.maxMarks}
+                                aria-label={`Marks for ${submission.name}`}
+                                placeholder={`Out of ${detailsAssignment.maxMarks}`}
+                                value={gradingValues[submission.submissionId]?.obtainedMarks || ''}
+                                onChange={(event) => setGradingValues((current) => ({
+                                  ...current,
+                                  [submission.submissionId]: {
+                                    ...current[submission.submissionId],
+                                    obtainedMarks: event.target.value,
+                                  },
+                                }))}
+                                className="rounded border border-slate-300 px-2 py-1"
+                              />
+                              <input
+                                type="text"
+                                aria-label={`Feedback for ${submission.name}`}
+                                placeholder="Feedback"
+                                value={gradingValues[submission.submissionId]?.feedback || ''}
+                                onChange={(event) => setGradingValues((current) => ({
+                                  ...current,
+                                  [submission.submissionId]: {
+                                    ...current[submission.submissionId],
+                                    feedback: event.target.value,
+                                  },
+                                }))}
+                                className="rounded border border-slate-300 px-2 py-1"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleGradeSubmission(submission)}
+                                className="rounded bg-blue-700 px-3 py-1 font-semibold text-white"
+                              >
+                                Grade
+                              </button>
+                            </div>
+                          )}
+                          {submission.status === 'graded' && (
+                            <p className="text-emerald-700">Grade: {submission.obtainedMarks} / {detailsAssignment.maxMarks}</p>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -651,6 +869,7 @@ export const AssignmentTracker = ({
             </div>
 
             <form onSubmit={handleSubmitFileConfirm} className="space-y-4 text-xs">
+              {actionError && <p role="alert" className="rounded border border-red-200 bg-red-50 p-2 text-red-800">{actionError}</p>}
               <div>
                 <span className="font-semibold text-slate-700">Assignment: </span>
                 <span className="text-slate-900 font-bold">{submittingAssignment.title}</span>
@@ -661,23 +880,54 @@ export const AssignmentTracker = ({
                 <label className="block font-semibold text-slate-700 mb-1">
                   Upload Document / Code File
                 </label>
-                <div className="border-2 border-dashed border-slate-300 p-4 rounded text-center hover:bg-slate-50 transition-colors">
+                <div
+                  onDragOver={(event) => event.preventDefault()}
+                  onDragEnter={(event) => {
+                    event.preventDefault();
+                    setIsDraggingFile(true);
+                  }}
+                  onDragLeave={() => setIsDraggingFile(false)}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    setIsDraggingFile(false);
+                    setSubmissionFile(event.dataTransfer.files?.[0] || null);
+                  }}
+                  className={`border-2 border-dashed p-4 rounded text-center transition-colors ${isDraggingFile ? 'border-blue-500 bg-blue-50' : 'border-slate-300 hover:bg-slate-50'}`}
+                >
                   <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" />
-                  <p className="text-slate-600 font-medium">Select file or enter filename below</p>
+                  <p className="text-slate-600 font-medium">Drop a file here or choose one</p>
                   <p className="text-[11px] text-slate-400 mt-0.5">Supports PDF, ZIP, JAVA, PY, DOCX</p>
+                  <input
+                    type="file"
+                    required
+                    accept=".pdf,.zip,.java,.py,.docx"
+                    onChange={(event) => setSubmissionFile(event.target.files?.[0] || null)}
+                    className="mt-3 block w-full text-left text-xs"
+                  />
+                  {submissionFile && (
+                    <p className="mt-2 truncate font-mono text-slate-700">{submissionFile.name}</p>
+                  )}
+                  {isSaving && (
+                    <div className="mt-3" aria-live="polite">
+                      <div className="h-2 overflow-hidden rounded bg-slate-200">
+                        <div className="h-full bg-blue-700 transition-all" style={{ width: `${uploadProgress}%` }} />
+                      </div>
+                      <p className="mt-1 text-slate-600">{uploadProgress}% uploaded</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Artifact Filename
+                  Submission Note
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={submissionFileName}
-                  onChange={(e) => setSubmissionFileName(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-slate-900 font-mono"
+                <textarea
+                  rows={3}
+                  maxLength={2000}
+                  value={submissionNote}
+                  onChange={(e) => setSubmissionNote(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded text-slate-900"
                 />
               </div>
 
@@ -691,9 +941,10 @@ export const AssignmentTracker = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded"
+                  disabled={isSaving || !submissionFile}
+                  className="px-4 py-2 font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded disabled:opacity-50"
                 >
-                  Confirm Submission
+                  {isSaving ? 'Uploading...' : 'Submit for Grading'}
                 </button>
               </div>
             </form>

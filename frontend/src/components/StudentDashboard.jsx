@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { GRADE_POINTS, INITIAL_LECTURE_EVENTS } from '../data/mockData.js';
 import { exportStudentDashboardPdf } from '../utils/exportPdf.js';
 import { AcademicPerformanceTrendGraph } from './AcademicPerformanceTrendGraph.jsx';
+import { usePerformanceTrend } from '../hooks/usePerformanceTrend.js';
 import { SmartStudySessionGenerator } from './SmartStudySessionGenerator.jsx';
 import {
   Calendar,
@@ -25,6 +26,7 @@ export const StudentDashboard = ({
 }) => {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
+  const performanceTrend = usePerformanceTrend();
 
   // Compute accurate real-time GPA from courses
   const totalCredits = (courses || []).reduce((sum, c) => sum + c.credits, 0);
@@ -174,7 +176,7 @@ export const StudentDashboard = ({
       </div>
 
       {/* Visual Academic Trend Graph (Recharts: GPA Growth & Assignment Performance) */}
-      <AcademicPerformanceTrendGraph currentGpa={currentGpa} />
+      <AcademicPerformanceTrendGraph {...performanceTrend} />
 
       {/* Smart Study Session Generator (Analyzes pending assignments & lecture schedules) */}
       <SmartStudySessionGenerator

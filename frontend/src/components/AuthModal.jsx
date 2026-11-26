@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { INITIAL_STUDENT_USER, INITIAL_FACULTY_USER, INITIAL_ADMIN_USER } from '../data/mockData.js';
+import { GUEST_STUDENT_USER } from '../data/mockData.js';
+import { api } from '../services/api.js';
 import { X } from 'lucide-react';
 
 export const AuthModal = ({
@@ -8,62 +9,57 @@ export const AuthModal = ({
   onLoginSuccess,
 }) => {
   const [selectedRole, setSelectedRole] = useState('student');
-  const [email, setEmail] = useState('tanyawadhwaa12@gmail.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
-  const [name, setName] = useState('Kshitij Jaiswal');
-  const [enrollment, setEnrollment] = useState('09511502722');
+  const [name, setName] = useState('');
+  const [enrollment, setEnrollment] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
-    if (role === 'student') {
-      setEmail('student@example.com');
-      setName('Kshitij Jaiswal');
-    } else if (role === 'faculty') {
-      setEmail('faculty@example.com');
-      setName('Ms. Deepika Yadav');
-    } else {
-      setEmail('admin@example.com');
-      setName('Dr. Deepika Kumar');
-    }
+    if (role !== 'student') setIsSignUp(false);
+    setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (selectedRole === 'student') {
-      onLoginSuccess({
-        ...INITIAL_STUDENT_USER,
-        name: isSignUp ? name : 'Kshitij Jaiswal',
-        email: email || INITIAL_STUDENT_USER.email,
-        enrollmentNumber: enrollment || INITIAL_STUDENT_USER.enrollmentNumber,
-      });
-    } else if (selectedRole === 'faculty') {
-      onLoginSuccess({
-        ...INITIAL_FACULTY_USER,
-        name: isSignUp ? name : INITIAL_FACULTY_USER.name,
-        email: email || INITIAL_FACULTY_USER.email,
-      });
-    } else {
-      onLoginSuccess({
-        ...INITIAL_ADMIN_USER,
-        name: isSignUp ? name : INITIAL_ADMIN_USER.name,
-        email: email || INITIAL_ADMIN_USER.email,
-      });
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const user = isSignUp
+        ? await api.registerCandidate({ name, email, password, enrollmentNumber: enrollment })
+        : await api.login({ email, password });
+
+      if (user.role !== selectedRole) {
+        await api.logout();
+        throw new Error(`This account is not registered as ${selectedRole}.`);
+      }
+
+      onLoginSuccess(user);
+      onClose();
+    } catch (requestError) {
+      setError(requestError.message || 'Unable to authenticate. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-    onClose();
   };
 
-  const handleGuestLogin = () => {
-    if (selectedRole === 'student') {
-      onLoginSuccess(INITIAL_STUDENT_USER);
-    } else if (selectedRole === 'faculty') {
-      onLoginSuccess(INITIAL_FACULTY_USER);
-    } else {
-      onLoginSuccess(INITIAL_ADMIN_USER);
+  const handleGuestLogin = async () => {
+    setError('');
+    setIsSubmitting(true);
+    try {
+      await api.logout();
+      onLoginSuccess(GUEST_STUDENT_USER);
+      onClose();
+    } catch (requestError) {
+      setError(requestError.message || 'Unable to switch to guest access.');
+    } finally {
+      setIsSubmitting(false);
     }
-    onClose();
   };
 
   return (
@@ -138,6 +134,8 @@ export const AuthModal = ({
               <input
                 type="text"
                 required
+                minLength={2}
+                maxLength={100}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-700"
@@ -153,6 +151,7 @@ export const AuthModal = ({
               <input
                 type="text"
                 required
+                maxLength={40}
                 value={enrollment}
                 onChange={(e) => setEnrollment(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded text-slate-900 font-mono focus:outline-none focus:ring-1 focus:ring-blue-700"
@@ -165,6 +164,7 @@ export const AuthModal = ({
             <input
               type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-700"
@@ -176,55 +176,71 @@ export const AuthModal = ({
             <input
               type="password"
               required
+              minLength={isSignUp ? 8 : undefined}
+              maxLength={128}
+              autoComplete={isSignUp ? 'new-password' : 'current-password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded text-slate-900 font-mono focus:outline-none focus:ring-1 focus:ring-blue-700"
             />
           </div>
 
+          {error && (
+            <p role="alert" className="text-red-700 text-xs">
+              {error}
+            </p>
+          )}
+
           <button
             type="submit"
-            className="w-full py-2.5 font-bold text-white bg-blue-700 hover:bg-blue-800 rounded transition-colors text-xs"
+            disabled={isSubmitting}
+            className="w-full py-2.5 font-bold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-60 rounded transition-colors text-xs"
           >
-            {isSignUp ? 'Create Account' : 'Login'}
+            {isSubmitting ? 'Please wait...' : isSignUp ? 'Create Account' : 'Login'}
           </button>
         </form>
 
-        {/* Divider: or */}
-        <div className="relative flex py-1 items-center">
-          <div className="flex-grow border-t border-slate-200"></div>
-          <span className="flex-shrink mx-3 text-slate-400 text-xs">or</span>
-          <div className="flex-grow border-t border-slate-200"></div>
-        </div>
+        {selectedRole === 'student' && (
+          <>
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-slate-200"></div>
+              <span className="flex-shrink mx-3 text-slate-400 text-xs">or</span>
+              <div className="flex-grow border-t border-slate-200"></div>
+            </div>
 
-        {/* Guest Login Button */}
-        <button
-          onClick={handleGuestLogin}
-          className="w-full py-2.5 font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded transition-colors text-xs"
-        >
-          Enter as Guest {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}
-        </button>
+            <button
+              type="button"
+              onClick={handleGuestLogin}
+              disabled={isSubmitting}
+              className="w-full py-2.5 font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded transition-colors text-xs"
+            >
+              Enter as Guest Student
+            </button>
+          </>
+        )}
 
-        {/* Sign up toggle */}
-        <div className="text-center text-xs text-slate-600">
-          {isSignUp ? 'Already registered? ' : "Don't have an account? "}
-          <button
-            type="button"
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-blue-700 font-semibold hover:underline"
-          >
-            {isSignUp ? 'Login' : 'Sign Up'}
-          </button>
-        </div>
-
-        {/* Demo Credentials Box */}
-        <div className="p-3 bg-slate-50 border border-slate-200 rounded text-xs text-slate-600 space-y-1">
-          <div className="font-bold text-slate-800">Demo Credentials:</div>
-          <div className="font-mono text-[11px] text-slate-600">
-            Email: <span className="font-semibold">{selectedRole}@example.com</span>
+        {selectedRole === 'student' && (
+          <div className="text-center text-xs text-slate-600">
+            {isSignUp ? 'Already registered? ' : "Don't have an account? "}
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setError('');
+              }}
+              className="text-blue-700 font-semibold hover:underline"
+            >
+              {isSignUp ? 'Login' : 'Sign Up'}
+            </button>
           </div>
-          <div className="font-mono text-[11px] text-slate-600">
-            Password: <span className="font-semibold">password</span>
+        )}
+
+        <div className="p-3 bg-slate-50 border border-slate-200 rounded text-xs text-slate-600 space-y-1">
+          <div className="font-bold text-slate-800">Account access</div>
+          <div className="text-[11px]">
+            {selectedRole === 'student'
+              ? 'Create a student account or continue with the limited guest demo.'
+              : 'Faculty and admin accounts must be provisioned by an administrator.'}
           </div>
         </div>
       </div>

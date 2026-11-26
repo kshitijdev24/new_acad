@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import * as models from './models.js';
+import { ensureAdminDashboardSeed } from './services/adminSeedService.js';
 
 // Initial seed data
 const SEED_USERS = [
@@ -357,6 +358,16 @@ class InMemoryStore {
   }
 
   getUsers() { return this.users; }
+  findUserByEmail(email) {
+    return this.users.find((user) => user.email.toLowerCase() === email) || null;
+  }
+  findUserByEnrollment(enrollmentNumber) {
+    return this.users.find((user) => user.enrollmentNumber === enrollmentNumber) || null;
+  }
+  addUser(user) {
+    this.users.push(user);
+    return user;
+  }
   getCourses() { return this.courses; }
   updateCourse(code, updates) {
     const idx = this.courses.findIndex((c) => c.code === code);
@@ -425,14 +436,14 @@ export const inMemoryDb = new InMemoryStore();
 let isMongoConnected = false;
 
 export async function connectMongo() {
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/acadlytic';
+  const uri = process.env.MONGODB_URI;
   try {
     mongoose.set('strictQuery', false);
     await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 2000,
     });
     isMongoConnected = true;
-    console.log('[MongoDB] Connected successfully to', uri);
+    console.log('[MongoDB] Connected successfully to MongoDB server.');
 
     // Seed database if empty
     await seedMongoDatabase();
@@ -456,6 +467,8 @@ async function seedMongoDatabase() {
       await models.DomainRecord.create(SEED_DOMAIN);
       console.log('[MongoDB] Initial institutional collections seeded successfully.');
     }
+    await ensureAdminDashboardSeed();
+    console.log('[MongoDB] Tenant-aware admin dashboard data is ready.');
   } catch (seedErr) {
     console.warn('[MongoDB] Collection seed notice:', seedErr.message);
   }
